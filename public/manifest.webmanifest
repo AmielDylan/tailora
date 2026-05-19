@@ -1,0 +1,10 @@
+{
+  "name": "Tailora",
+  "short_name": "Tailora",
+  "description": "Carnet de couture digital mobile-first pour suivre les commandes.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fff7ed",
+  "theme_color": "#7c3aed",
+  "icons": []
+}
