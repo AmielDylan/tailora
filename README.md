@@ -2,11 +2,11 @@
 
 Tailora est un carnet de couture digital mobile-first pour remplacer le cahier papier d'un couturier ou d'une couturière.
 
-## Promesse V1
+## Objectifs MVP
 
 Enregistrer une commande avec le client, les dates, les photos du tissu et du modèle, le statut, le paiement léger, puis la retrouver rapidement.
 
-## Stack MVP
+## Stack
 
 - PWA web mobile-first avec React, TypeScript et Vite.
 - Données locales dans `localStorage` pour tester rapidement le parcours terrain avant d'ajouter un backend.
@@ -34,9 +34,3 @@ npm run build
 ## Tests
 
 À ce stade du MVP, le dépôt ne contient pas d'implémentation de tests end-to-end navigateur. La priorité reste la validation terrain du parcours Tailora, avec un contrôle technique minimal via `npm run build`.
-
-## Suite recommandée
-
-1. Tester le parcours sur téléphone avec 3 à 5 couturiers.
-2. Valider les champs obligatoires et le caractère obligatoire ou non des photos.
-3. Ajouter ensuite une authentification simple, une base Supabase/Firebase et un stockage photos si le test local confirme la valeur du MVP.
