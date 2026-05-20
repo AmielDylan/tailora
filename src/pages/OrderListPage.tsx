@@ -1,18 +1,30 @@
-import { Plus } from 'lucide-react';
+import { useState } from 'react';
+import { Plus, ChevronDown, ChevronUp } from 'lucide-react';
 import { STATUSES } from '@/constants';
 import { balance, currency, dateLabel, isLate } from '@/helpers';
 import { useAppDataContext } from '@/context/AppDataContext';
 import { useNavigationContext } from '@/context/NavigationContext';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { StatusBadge } from '@/components/StatusBadge';
-import { PhotoPreview } from '@/components/PhotoPreview';
 import { GarmentsSummary } from '@/components/GarmentsSummary';
 import { MeasurementsSummary } from '@/components/MeasurementsSummary';
 import type { Status } from '@/types';
 
+function daysLabel(deliveryAt: string): { text: string; late: boolean } {
+  const diff = Math.ceil((new Date(deliveryAt).getTime() - Date.now()) / 86400000);
+  if (diff < 0) return { text: `${Math.abs(diff)}j de retard`, late: true };
+  if (diff === 0) return { text: 'Livraison aujourd\'hui', late: false };
+  return { text: `dans ${diff}j`, late: false };
+}
+
 export function OrderListPage() {
   const data = useAppDataContext();
   const nav = useNavigationContext();
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  function toggle(id: string) {
+    setExpandedId((cur) => (cur === id ? null : id));
+  }
 
   return (
     <>
@@ -52,73 +64,97 @@ export function OrderListPage() {
 
         {/* Order cards */}
         <div className="space-y-3">
-          {data.filteredOrders.map((order) => (
-            <article
-              key={order.id}
-              className={`rounded-xl border bg-card p-4 space-y-3 ${isLate(order) ? 'border-destructive/40' : 'border-border'}`}
-            >
-              <button
-                className="flex w-full items-start justify-between gap-3 text-left"
-                onClick={() => nav.push(`orders/${order.id}`)}
+          {data.filteredOrders.map((order) => {
+            const expanded = expandedId === order.id;
+            const late = isLate(order);
+            const bal = balance(order);
+            const days = daysLabel(order.deliveryAt);
+
+            return (
+              <article
+                key={order.id}
+                className={`rounded-xl border bg-card ${late ? 'border-destructive/40' : 'border-border'}`}
               >
-                <div className="min-w-0">
-                  <h3 className="truncate font-medium text-foreground">{order.clientName}</h3>
-                  <p className="text-xs text-muted-foreground">
-                    {order.clientPhone}{order.clientAddress ? ` · ${order.clientAddress}` : ''}
-                  </p>
-                </div>
-                <StatusBadge status={order.status} />
-              </button>
-
-              <div className="grid grid-cols-2 gap-2">
-                <PhotoPreview title="Tissu" image={order.fabricPhoto} />
-                <PhotoPreview title="Modèle" image={order.modelPhoto} />
-              </div>
-
-              <dl className="grid grid-cols-3 gap-2 text-xs">
-                <div><dt className="text-muted-foreground">Réception</dt><dd className="font-medium">{dateLabel(order.fabricReceivedAt)}</dd></div>
-                <div><dt className="text-muted-foreground">Livraison</dt><dd className="font-medium">{dateLabel(order.deliveryAt)}</dd></div>
-                <div><dt className="text-muted-foreground">Reste</dt><dd className="font-medium">{currency(balance(order))}</dd></div>
-              </dl>
-
-              {isLate(order) && <p className="text-xs font-medium text-destructive">⚠ En retard</p>}
-
-              <GarmentsSummary garments={order.garments || []} />
-              <MeasurementsSummary measurements={order.measurements || []} />
-
-              {/* Quick-status */}
-              <div className="flex gap-1.5 overflow-x-auto">
-                {STATUSES.map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => data.changeStatus(order.id, s as Status)}
-                    className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                      order.status === s
-                        ? 'bg-foreground text-background'
-                        : 'border border-border text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex gap-2">
+                {/* Collapsed header — always visible */}
                 <button
-                  onClick={() => nav.push(`orders/${order.id}/edit`)}
-                  className="flex-1 rounded-full border border-border py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+                  className="flex w-full items-center gap-3 p-4 text-left"
+                  onClick={() => toggle(order.id)}
                 >
-                  Modifier
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate font-medium text-foreground">{order.clientName}</span>
+                      <StatusBadge status={order.status} />
+                    </div>
+                    <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className={days.late ? 'text-destructive font-medium' : ''}>{days.text}</span>
+                      <span>·</span>
+                      <span>{dateLabel(order.deliveryAt)}</span>
+                      {bal > 0 && (
+                        <>
+                          <span>·</span>
+                          <span className="text-foreground font-medium">{currency(bal)}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  {expanded
+                    ? <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    : <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  }
                 </button>
-                <button
-                  onClick={() => data.deleteOrder(order.id)}
-                  className="flex-1 rounded-full border border-destructive/40 py-1.5 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10"
-                >
-                  Supprimer
-                </button>
-              </div>
-            </article>
-          ))}
+
+                {/* Expanded content */}
+                {expanded && (
+                  <div className="border-t border-border px-4 pb-4 pt-3 space-y-3">
+                    <GarmentsSummary garments={order.garments || []} />
+                    <MeasurementsSummary measurements={order.measurements || []} />
+
+                    {order.notes && (
+                      <p className="text-xs text-muted-foreground italic">{order.notes}</p>
+                    )}
+
+                    <dl className="grid grid-cols-3 gap-2 text-xs">
+                      <div><dt className="text-muted-foreground">Réception</dt><dd className="font-medium">{dateLabel(order.fabricReceivedAt)}</dd></div>
+                      <div><dt className="text-muted-foreground">Prix</dt><dd className="font-medium">{currency(order.totalPrice)}</dd></div>
+                      <div><dt className="text-muted-foreground">Reste</dt><dd className="font-medium">{currency(bal)}</dd></div>
+                    </dl>
+
+                    {/* Quick-status */}
+                    <div className="flex gap-1.5 overflow-x-auto">
+                      {STATUSES.map((s) => (
+                        <button
+                          key={s}
+                          onClick={() => data.changeStatus(order.id, s as Status)}
+                          className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                            order.status === s
+                              ? 'bg-foreground text-background'
+                              : 'border border-border text-muted-foreground hover:text-foreground'
+                          }`}
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => nav.push(`orders/${order.id}/edit`)}
+                        className="flex-1 rounded-full border border-border py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+                      >
+                        Modifier
+                      </button>
+                      <button
+                        onClick={() => data.deleteOrder(order.id)}
+                        className="flex-1 rounded-full border border-destructive/40 py-1.5 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10"
+                      >
+                        Supprimer
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </article>
+            );
+          })}
         </div>
       </div>
 
