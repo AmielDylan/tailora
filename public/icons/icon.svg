@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#111111"/>
+  <!-- crossbar du T -->
+  <rect x="96" y="122" width="320" height="66" rx="10" fill="white"/>
+  <!-- fût du T -->
+  <rect x="223" y="122" width="66" height="278" rx="10" fill="white"/>
+</svg>
