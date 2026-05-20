@@ -12,7 +12,7 @@ export function dateLabel(value: string) {
 }
 
 export function isLate(order: Order) {
-  return order.deliveryAt < today && order.status !== 'Livrée';
+  return order.deliveryAt < today && order.status !== 'Livrée' && order.status !== 'Terminée';
 }
 
 export function balance(order: Pick<Order, 'totalPrice' | 'deposit'>) {
