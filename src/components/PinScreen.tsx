@@ -3,10 +3,15 @@ import { PIN_KEY, AUTH_KEY } from '@/constants';
 import { cn } from '@/lib/utils';
 
 const BG_IMAGES = ['/images/tailor_men.png', '/images/tailor_women.png'];
+const MAX_ATTEMPTS = 3;
 
-type Props = { onSuccess: () => void; mode: 'create' | 'unlock' };
+type Props = {
+  mode: 'create' | 'unlock';
+  onSuccess: () => void;
+  onLockout?: () => void; // called after 3 failed attempts in unlock mode
+};
 
-export function PinScreen({ onSuccess, mode }: Props) {
+export function PinScreen({ mode, onSuccess, onLockout }: Props) {
   const [step, setStep] = useState<'enter' | 'confirm'>('enter');
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
@@ -16,9 +21,7 @@ export function PinScreen({ onSuccess, mode }: Props) {
   const [imgIndex, setImgIndex] = useState(() => Math.floor(Math.random() * BG_IMAGES.length));
 
   useEffect(() => {
-    const id = setInterval(() => {
-      setImgIndex((i) => (i + 1) % BG_IMAGES.length);
-    }, 8000);
+    const id = setInterval(() => setImgIndex((i) => (i + 1) % BG_IMAGES.length), 8000);
     return () => clearInterval(id);
   }, []);
 
@@ -45,7 +48,6 @@ export function PinScreen({ onSuccess, mode }: Props) {
       } else if (step === 'confirm' && confirmPin.length === 4) {
         if (confirmPin === pin) {
           localStorage.setItem(PIN_KEY, pin);
-          localStorage.setItem(AUTH_KEY, 'true');
           onSuccess();
         } else {
           setErrorMsg('Les codes ne correspondent pas. Recommencez.');
@@ -58,13 +60,21 @@ export function PinScreen({ onSuccess, mode }: Props) {
       if (pin.length === 4) {
         const stored = localStorage.getItem(PIN_KEY);
         if (pin === stored) {
-          localStorage.setItem(AUTH_KEY, 'true');
           onSuccess();
         } else {
           const next = attempts + 1;
           setAttempts(next);
-          setErrorMsg(next >= 3 ? 'Code incorrect. Vérifiez votre PIN.' : 'Code incorrect.');
           setPin('');
+          if (next >= MAX_ATTEMPTS) {
+            setErrorMsg('Trop de tentatives. Reconnectez-vous.');
+            // Short delay so user sees the message before lockout
+            setTimeout(() => {
+              localStorage.removeItem(AUTH_KEY);
+              onLockout?.();
+            }, 1500);
+          } else {
+            setErrorMsg(`Code incorrect. ${MAX_ATTEMPTS - next} tentative${MAX_ATTEMPTS - next > 1 ? 's' : ''} restante${MAX_ATTEMPTS - next > 1 ? 's' : ''}.`);
+          }
         }
       }
     }
@@ -72,40 +82,30 @@ export function PinScreen({ onSuccess, mode }: Props) {
 
   const title =
     mode === 'create'
-      ? step === 'enter'
-        ? 'Créer votre code PIN'
-        : 'Confirmez votre code PIN'
+      ? step === 'enter' ? 'Définir votre code PIN' : 'Confirmez votre code PIN'
       : 'Déverrouiller Tailora';
 
   const subtitle =
     mode === 'create'
       ? step === 'enter'
-        ? 'Choisissez un code à 4 chiffres pour protéger vos données.'
-        : 'Saisissez à nouveau votre code pour confirmer.'
+        ? 'Choisissez un code à 4 chiffres.'
+        : 'Saisissez à nouveau votre code.'
       : 'Entrez votre code PIN à 4 chiffres.';
 
   const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'];
 
   return (
-    <div className="min-h-screen flex">
-      {/* ── Left panel ── */}
-      <div className="flex-1 flex flex-col items-center justify-center px-8 py-12 bg-background">
+    <div className="h-screen flex overflow-hidden">
+      {/* ── Panneau gauche ── */}
+      <div className="flex flex-1 flex-col items-center justify-center overflow-y-auto px-8 py-12 bg-background">
         <div className="w-full max-w-xs space-y-8">
-          {/* Logo */}
-          <div className="space-y-1">
-            <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground">
-              Tailora
-            </h1>
-            <p className="text-sm text-muted-foreground">Mon carnet de couture digital</p>
-          </div>
+          <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground">Tailora</h1>
 
-          {/* Title + subtitle */}
           <div className="space-y-1">
             <h2 className="text-lg font-semibold text-foreground">{title}</h2>
             <p className="text-sm text-muted-foreground">{subtitle}</p>
           </div>
 
-          {/* PIN dots */}
           <div className="flex items-center justify-center gap-4" aria-label="Code PIN saisi">
             {[0, 1, 2, 3].map((i) => (
               <div
@@ -122,29 +122,21 @@ export function PinScreen({ onSuccess, mode }: Props) {
             ))}
           </div>
 
-          {/* Error message */}
-          <div className="min-h-5 text-center text-sm text-destructive">
-            {errorMsg}
-          </div>
+          <div className="min-h-5 text-center text-sm text-destructive">{errorMsg}</div>
 
-          {/* Keypad */}
           <div className="grid grid-cols-3 gap-3">
             {keys.map((key, i) => {
-              if (key === '') {
-                return <div key={i} />;
-              }
-              if (key === 'del') {
-                return (
-                  <button
-                    key={i}
-                    onClick={pressDelete}
-                    aria-label="Effacer"
-                    className="flex h-14 w-full items-center justify-center rounded-full border border-border bg-secondary text-foreground transition-colors hover:bg-accent active:scale-95"
-                  >
-                    ⌫
-                  </button>
-                );
-              }
+              if (key === '') return <div key={i} />;
+              if (key === 'del') return (
+                <button
+                  key={i}
+                  onClick={pressDelete}
+                  aria-label="Effacer"
+                  className="flex h-14 w-full items-center justify-center rounded-full border border-border bg-secondary text-foreground transition-colors hover:bg-accent active:scale-95"
+                >
+                  ⌫
+                </button>
+              );
               return (
                 <button
                   key={i}
@@ -159,8 +151,8 @@ export function PinScreen({ onSuccess, mode }: Props) {
         </div>
       </div>
 
-      {/* ── Right panel (desktop only) ── */}
-      <div className="relative hidden overflow-hidden lg:block lg:w-1/2">
+      {/* ── Panneau droit (desktop) ── */}
+      <div className="relative hidden lg:block lg:w-1/2">
         {BG_IMAGES.map((src, i) => (
           <img
             key={src}
@@ -172,7 +164,7 @@ export function PinScreen({ onSuccess, mode }: Props) {
             )}
           />
         ))}
-        <div className="absolute inset-0 bg-foreground/10" />
+        <div className="absolute inset-0 bg-black/10" />
       </div>
     </div>
   );
