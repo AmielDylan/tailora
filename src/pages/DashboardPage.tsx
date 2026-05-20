@@ -1,4 +1,4 @@
-import { Package, Users, Clock, AlertTriangle, Banknote, Plus } from 'lucide-react';
+import { Package, BookOpen, Clock, AlertTriangle, Banknote, Plus } from 'lucide-react';
 import { useAppDataContext } from '@/context/AppDataContext';
 import { useNavigationContext } from '@/context/NavigationContext';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -7,13 +7,23 @@ import { EmptyState } from '@/components/shared/EmptyState';
 import { OrderMiniList } from '@/components/OrderMiniList';
 
 export function DashboardPage() {
-  const { orders, dashboard } = useAppDataContext();
+  const { orders, clients, dashboard } = useAppDataContext();
   const nav = useNavigationContext();
+
+  const newOrderBtn = (
+    <button
+      onClick={() => nav.push('orders/new')}
+      className="flex items-center gap-1.5 rounded-full bg-foreground px-4 py-1.5 text-sm font-medium text-background transition-opacity hover:opacity-80"
+    >
+      <Plus className="h-3.5 w-3.5" />
+      Nouvelle commande
+    </button>
+  );
 
   if (orders.length === 0) {
     return (
       <>
-        <PageHeader title="Tableau de bord" />
+        <PageHeader title="Tableau de bord" right={newOrderBtn} />
         <div className="p-6">
           <EmptyState
             icon={Package}
@@ -28,40 +38,38 @@ export function DashboardPage() {
 
   return (
     <>
-      <PageHeader title="Tableau de bord" />
+      <PageHeader title="Tableau de bord" right={newOrderBtn} />
       <div className="p-4 pb-8">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 
-          {/* Stats — spans 2 cols on md+ */}
-          <BentoCard className="md:col-span-2 lg:col-span-2">
-            <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Vue globale</h3>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="text-center">
-                <Clock className="mx-auto mb-1 h-5 w-5 text-muted-foreground" />
-                <p className="font-heading text-3xl font-bold text-foreground">{dashboard.active.length}</p>
-                <p className="text-xs text-muted-foreground">en cours</p>
-              </div>
-              <div className="text-center">
-                <AlertTriangle className="mx-auto mb-1 h-5 w-5 text-destructive" />
-                <p className="font-heading text-3xl font-bold text-foreground">{dashboard.late.length}</p>
-                <p className="text-xs text-muted-foreground">en retard</p>
-              </div>
-              <div className="text-center">
-                <Banknote className="mx-auto mb-1 h-5 w-5 text-muted-foreground" />
-                <p className="font-heading text-3xl font-bold text-foreground">{dashboard.unpaid.length}</p>
-                <p className="text-xs text-muted-foreground">impayés</p>
-              </div>
+          {/* 3 stat cards */}
+          <BentoCard className="flex items-center gap-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100">
+              <Clock className="h-5 w-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-foreground">{dashboard.active.length}</p>
+              <p className="text-xs text-muted-foreground">En cours</p>
             </div>
           </BentoCard>
 
-          {/* CTA card */}
-          <BentoCard className="flex cursor-pointer flex-col items-center justify-center gap-3 border-dashed transition-colors hover:bg-secondary" onClick={() => nav.push('orders/new')}>
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-foreground text-background">
-              <Plus className="h-6 w-6" />
+          <BentoCard className="flex items-center gap-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100">
+              <AlertTriangle className="h-5 w-5 text-red-600" />
             </div>
-            <div className="text-center">
-              <p className="font-medium text-foreground">Nouvelle commande</p>
-              <p className="text-xs text-muted-foreground">Ajouter une commande</p>
+            <div>
+              <p className="text-2xl font-bold text-foreground">{dashboard.late.length}</p>
+              <p className="text-xs text-muted-foreground">En retard</p>
+            </div>
+          </BentoCard>
+
+          <BentoCard className="flex items-center gap-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100">
+              <Banknote className="h-5 w-5 text-amber-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-foreground">{dashboard.unpaid.length}</p>
+              <p className="text-xs text-muted-foreground">Impayés</p>
             </div>
           </BentoCard>
 
@@ -103,11 +111,11 @@ export function DashboardPage() {
           <BentoCard className="cursor-pointer border-dashed transition-colors hover:bg-secondary" onClick={() => nav.navigate('clients')}>
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary">
-                <Users className="h-5 w-5 text-foreground" />
+                <BookOpen className="h-5 w-5 text-foreground" />
               </div>
               <div>
                 <p className="font-medium text-foreground">Annuaire clients</p>
-                <p className="text-xs text-muted-foreground">Voir tous les clients</p>
+                <p className="text-xs text-muted-foreground">{clients.length} client{clients.length !== 1 ? 's' : ''}</p>
               </div>
             </div>
           </BentoCard>
