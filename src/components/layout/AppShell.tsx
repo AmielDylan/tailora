@@ -4,12 +4,12 @@ import { PageRouter } from '@/components/layout/PageRouter';
 import { Toast } from '@/components/Toast';
 import { useAppDataContext } from '@/context/AppDataContext';
 
-export function AppShell({ onLock }: { onLock: () => void }) {
+export function AppShell({ onLock, pinEnabled }: { onLock: () => void; pinEnabled: boolean }) {
   const { toast, setToast } = useAppDataContext();
 
   return (
     <SidebarProvider>
-      <AppSidebar onLock={onLock} />
+      <AppSidebar onLock={onLock} pinEnabled={pinEnabled} />
       <SidebarInset>
         <PageRouter onLock={onLock} />
       </SidebarInset>
