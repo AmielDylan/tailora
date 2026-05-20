@@ -1,5 +1,22 @@
 import { type ChangeEvent, type FormEvent, useState } from 'react';
 import type { Client, FormState, Order, Status } from '@/types';
+
+const COUNTRIES = [
+  { code: 'BJ', label: 'Bénin' },
+  { code: 'SN', label: 'Sénégal' },
+  { code: 'CI', label: "Côte d'Ivoire" },
+  { code: 'ML', label: 'Mali' },
+  { code: 'GN', label: 'Guinée' },
+  { code: 'BF', label: 'Burkina Faso' },
+  { code: 'TG', label: 'Togo' },
+  { code: 'NG', label: 'Nigeria' },
+  { code: 'CM', label: 'Cameroun' },
+  { code: 'FR', label: 'France' },
+];
+
+function toFlag(code: string) {
+  return code.toUpperCase().replace(/./g, (c) => String.fromCodePoint(c.charCodeAt(0) + 127397));
+}
 import { STATUSES, makeEmptyForm, defaultMeasurements } from '@/constants';
 import { balance, currency, uid } from '@/helpers';
 import { useAppDataContext } from '@/context/AppDataContext';
@@ -58,9 +75,10 @@ export function OrderForm({ orderId, onSave, onCancel }: Props) {
         clientName: client.name,
         clientPhone: client.phone,
         clientAddress: client.address || '',
+        clientCountry: client.country || 'BJ',
       }));
     } else {
-      setForm((cur) => ({ ...cur, clientId: '', clientName: '', clientPhone: '', clientAddress: '' }));
+      setForm((cur) => ({ ...cur, clientId: '', clientName: '', clientPhone: '', clientAddress: '', clientCountry: 'BJ' }));
     }
   }
 
@@ -104,10 +122,10 @@ export function OrderForm({ orderId, onSave, onCancel }: Props) {
 
     if (existingClient) {
       clientId = existingClient.id;
-      upsertClient({ ...existingClient, name: normalizedName, phone: normalizedPhone, address: form.clientAddress || existingClient.address });
+      upsertClient({ ...existingClient, name: normalizedName, phone: normalizedPhone, address: form.clientAddress || existingClient.address, country: form.clientCountry || existingClient.country });
     } else {
       clientId = uid('client');
-      upsertClient({ id: clientId, name: normalizedName, phone: normalizedPhone, address: form.clientAddress });
+      upsertClient({ id: clientId, name: normalizedName, phone: normalizedPhone, address: form.clientAddress, country: form.clientCountry });
     }
 
     const payload: Order = {
@@ -175,14 +193,30 @@ export function OrderForm({ orderId, onSave, onCancel }: Props) {
         </div>
       </div>
 
-      <div className="space-y-1.5">
-        <label className="block text-sm font-medium text-foreground">Adresse</label>
-        <input
-          value={form.clientAddress}
-          onChange={(e) => updateForm('clientAddress', e.target.value)}
-          placeholder="Quartier, ville"
-          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-        />
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <label className="block text-sm font-medium text-foreground">Adresse</label>
+          <input
+            value={form.clientAddress}
+            onChange={(e) => updateForm('clientAddress', e.target.value)}
+            placeholder="Quartier, ville"
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <label className="block text-sm font-medium text-foreground">Pays</label>
+          <select
+            value={form.clientCountry || 'BJ'}
+            onChange={(e) => updateForm('clientCountry', e.target.value)}
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+          >
+            {COUNTRIES.map(({ code, label }) => (
+              <option key={code} value={code}>
+                {toFlag(code)} {label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">

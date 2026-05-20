@@ -7,6 +7,10 @@ export const STATUSES: Status[] = ['Reçue', 'En cours', 'Terminée', 'Livrée']
 export const STORAGE_KEY = 'tailora-mvp-state';
 export const PIN_KEY = 'tailora-pin';
 export const AUTH_KEY = 'tailora-authenticated';
+export const CREDENTIALS_KEY = 'tailora-credentials';
+export const PIN_ENABLED_KEY = 'tailora-pin-enabled';
+export const LAST_ACTIVE_KEY = 'tailora-last-active';
+export const LOCK_TIMEOUT_KEY = 'tailora-lock-timeout'; // minutes, 0 = manual only
 
 export const defaultMeasurements: Measurement[] = [
   { id: 'm-1', label: 'Poitrine', value: '', inputType: 'number' },
@@ -16,8 +20,8 @@ export const defaultMeasurements: Measurement[] = [
 ];
 
 export const demoClients: Client[] = [
-  { id: 'client-awa', name: 'Awa Diop', phone: '+221 77 123 45 67', address: 'Plateau, Dakar', notes: 'Préfère être appelée le matin.' },
-  { id: 'client-mariam', name: 'Mariam Fall', phone: '+221 76 987 65 43', address: 'Medina, Dakar' },
+  { id: 'client-awa', name: 'Awa Diop', phone: '+221 77 123 45 67', address: 'Plateau, Dakar', country: 'SN', notes: 'Préfère être appelée le matin.' },
+  { id: 'client-mariam', name: 'Mariam Fall', phone: '+221 76 987 65 43', address: 'Medina, Dakar', country: 'SN' },
 ];
 
 export const demoOrders: Order[] = [
@@ -27,6 +31,7 @@ export const demoOrders: Order[] = [
     clientName: 'Awa Diop',
     clientPhone: '+221 77 123 45 67',
     clientAddress: 'Plateau, Dakar',
+    clientCountry: 'SN',
     fabricReceivedAt: '2026-05-15',
     deliveryAt: '2026-05-20',
     status: 'En cours',
@@ -50,6 +55,7 @@ export const demoOrders: Order[] = [
     clientName: 'Mariam Fall',
     clientPhone: '+221 76 987 65 43',
     clientAddress: 'Medina, Dakar',
+    clientCountry: 'SN',
     fabricReceivedAt: '2026-05-10',
     deliveryAt: '2026-05-17',
     status: 'Terminée',
@@ -76,6 +82,7 @@ export function makeEmptyForm(): FormState {
     clientName: '',
     clientPhone: '',
     clientAddress: '',
+    clientCountry: 'BJ',
     fabricReceivedAt: today,
     deliveryAt: today,
     status: 'Reçue',
