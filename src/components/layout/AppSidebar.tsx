@@ -1,4 +1,4 @@
-import { Scissors, Package, Users, Lock } from 'lucide-react';
+import { Scissors, Package, Users, Lock, User } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -50,19 +50,29 @@ export function AppSidebar({ onLock, pinEnabled }: { onLock: () => void; pinEnab
         </SidebarMenu>
       </SidebarContent>
 
-      {pinEnabled && (
-        <SidebarFooter className="px-2 py-3">
-          <SidebarSeparator className="mb-2" />
-          <SidebarMenu>
+      <SidebarFooter className="px-2 py-3">
+        <SidebarSeparator className="mb-2" />
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              isActive={activeSection === 'profile'}
+              onClick={() => navigate('profile')}
+              className="gap-3"
+            >
+              <User className="h-4 w-4 shrink-0" />
+              <span>Profil</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          {pinEnabled && (
             <SidebarMenuItem>
               <SidebarMenuButton onClick={onLock} className="gap-3 text-muted-foreground hover:text-foreground">
                 <Lock className="h-4 w-4 shrink-0" />
                 <span>Verrouiller</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarFooter>
-      )}
+          )}
+        </SidebarMenu>
+      </SidebarFooter>
     </Sidebar>
   );
 }

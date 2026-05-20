@@ -7,7 +7,8 @@ export type Route =
   | `orders/${string}`
   | `orders/${string}/edit`
   | 'clients'
-  | `clients/${string}`;
+  | `clients/${string}`
+  | 'profile';
 
 export function useNavigation() {
   const [stack, setStack] = useState<Route[]>(['dashboard']);
