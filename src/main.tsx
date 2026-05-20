@@ -699,7 +699,7 @@ function App() {
       <header className="hero">
         <div className="hero-text">
           <h1>Tailora</h1>
-          <p>Le carnet de couture digital</p>
+          <p>Mon carnet de couture digital</p>
         </div>
         <button className="lock-btn" onClick={lock}>
           <span>🔒</span> Verrouiller
