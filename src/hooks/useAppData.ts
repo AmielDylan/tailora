@@ -68,6 +68,12 @@ export function useAppData() {
     }
   }
 
+  function deleteClientCascade(clientId: string) {
+    setClients((cur) => cur.filter((c) => c.id !== clientId));
+    setOrders((cur) => cur.filter((o) => o.clientId !== clientId));
+    setToast('Client et commandes supprimés');
+  }
+
   function changeStatus(orderId: string, status: Status) {
     setOrders((cur) => cur.map((o) => (o.id === orderId ? { ...o, status } : o)));
   }
@@ -84,6 +90,7 @@ export function useAppData() {
     upsertClient,
     upsertOrderRecord,
     deleteOrder,
+    deleteClientCascade,
     changeStatus,
     setSearch,
     setStatusFilter,

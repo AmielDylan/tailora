@@ -1,4 +1,4 @@
-import { Scissors, Package, Users, Lock } from 'lucide-react';
+import { Scissors, Package, Users, Lock, User } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -18,7 +18,7 @@ const NAV_ITEMS: { label: string; route: Route; icon: React.ElementType }[] = [
   { label: 'Clients',         route: 'clients',   icon: Users    },
 ];
 
-export function AppSidebar({ onLock }: { onLock: () => void }) {
+export function AppSidebar({ onLock, pinEnabled }: { onLock: () => void; pinEnabled: boolean }) {
   const { current, navigate } = useNavigationContext();
 
   const activeSection = current.split('/')[0] as Route;
@@ -29,7 +29,6 @@ export function AppSidebar({ onLock }: { onLock: () => void }) {
         <h1 className="font-heading text-xl font-bold tracking-tight text-sidebar-foreground">
           Tailora
         </h1>
-        <p className="text-xs text-sidebar-foreground/50">Carnet de couture</p>
       </SidebarHeader>
 
       <SidebarSeparator />
@@ -55,11 +54,23 @@ export function AppSidebar({ onLock }: { onLock: () => void }) {
         <SidebarSeparator className="mb-2" />
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={onLock} className="gap-3 text-muted-foreground hover:text-foreground">
-              <Lock className="h-4 w-4 shrink-0" />
-              <span>Verrouiller</span>
+            <SidebarMenuButton
+              isActive={activeSection === 'profile'}
+              onClick={() => navigate('profile')}
+              className="gap-3"
+            >
+              <User className="h-4 w-4 shrink-0" />
+              <span>Profil</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
+          {pinEnabled && (
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={onLock} className="gap-3 text-muted-foreground hover:text-foreground">
+                <Lock className="h-4 w-4 shrink-0" />
+                <span>Verrouiller</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>

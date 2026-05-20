@@ -20,6 +20,7 @@ export type Client = {
   name: string;
   phone: string;
   address?: string;
+  country?: string; // ISO-2 country code
   notes?: string;
 };
 
@@ -29,6 +30,7 @@ export type Order = {
   clientName: string;
   clientPhone: string;
   clientAddress: string;
+  clientCountry?: string;
   fabricReceivedAt: string;
   deliveryAt: string;
   status: Status;
