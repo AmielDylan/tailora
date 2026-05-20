@@ -12,6 +12,7 @@ import { MeasurementsSummary } from './components/MeasurementsSummary';
 import { GarmentsSummary } from './components/GarmentsSummary';
 import { OrderMiniList } from './components/OrderMiniList';
 import { ClientDetails } from './components/ClientDetails';
+import { Toast } from './components/Toast';
 
 export function App() {
   const [authenticated, setAuthenticated] = useState(() => localStorage.getItem(AUTH_KEY) === 'true');
@@ -26,6 +27,7 @@ export function App() {
   const [statusFilter, setStatusFilter] = useState<'Tous' | Status>('Tous');
   const [selectedClientId, setSelectedClientId] = useState<string | null>(demoClients[0]?.id ?? null);
   const [modelPhotoError, setModelPhotoError] = useState(false);
+  const [toast, setToast] = useState('');
 
   const initialized = useRef(false);
 
@@ -171,6 +173,7 @@ export function App() {
 
     setOrders((cur) => editingOrderId ? cur.map((o) => o.id === editingOrderId ? payload : o) : [payload, ...cur]);
     setSelectedClientId(clientId);
+    setToast(editingOrderId ? 'Commande mise à jour ✓' : 'Commande ajoutée ✓');
     resetForm();
   }
 
@@ -179,6 +182,7 @@ export function App() {
     if (!order) return;
     if (window.confirm(`Supprimer la commande de ${order.clientName} ? Cette action est définitive.`)) {
       setOrders((cur) => cur.filter((o) => o.id !== orderId));
+      setToast('Commande supprimée');
     }
   }
 
@@ -202,6 +206,7 @@ export function App() {
 
   return (
     <main className="app-shell">
+      <Toast message={toast} onDone={() => setToast('')} />
       <header className="hero">
         <div className="hero-text">
           <h1>Tailora</h1>
@@ -220,35 +225,52 @@ export function App() {
 
       {view === 'dashboard' && (
         <section className="stack">
-          <div className="stats-grid">
-            <article className="stat-card">
-              <strong>{dashboard.active.length}</strong>
-              <span>en cours</span>
-            </article>
-            <article className="stat-card danger">
-              <strong>{dashboard.late.length}</strong>
-              <span>en retard</span>
-            </article>
-            <article className="stat-card warning">
-              <strong>{dashboard.unpaid.length}</strong>
-              <span>solde impayé</span>
-            </article>
-          </div>
+          {orders.length === 0 ? (
+            <div className="empty-state">
+              <p className="empty-state-icon">✂️</p>
+              <h2>Bienvenue dans Tailora</h2>
+              <p>Votre carnet de couture est vide pour l'instant.<br />Ajoutez votre première commande pour commencer.</p>
+              <button className="btn btn-primary" onClick={() => setView('orders')}>Ajouter une commande</button>
+            </div>
+          ) : (
+            <>
+              <div className="stats-grid">
+                <article className="stat-card">
+                  <strong>{dashboard.active.length}</strong>
+                  <span>en cours</span>
+                </article>
+                <article className="stat-card danger">
+                  <strong>{dashboard.late.length}</strong>
+                  <span>en retard</span>
+                </article>
+                <article className="stat-card warning">
+                  <strong>{dashboard.unpaid.length}</strong>
+                  <span>solde impayé</span>
+                </article>
+              </div>
 
-          <section className="panel">
-            <h2>Prochaines livraisons</h2>
-            <OrderMiniList orders={dashboard.upcoming} onEdit={startEdit} />
-          </section>
+              <section className="panel">
+                <h2>Prochaines livraisons</h2>
+                {dashboard.upcoming.length === 0
+                  ? <p className="empty panel-empty">Aucune livraison à venir.</p>
+                  : <OrderMiniList orders={dashboard.upcoming} onEdit={startEdit} />}
+              </section>
 
-          <section className="panel">
-            <h2>Commandes en retard</h2>
-            <OrderMiniList orders={dashboard.late} onEdit={startEdit} />
-          </section>
+              {dashboard.late.length > 0 && (
+                <section className="panel panel-alert">
+                  <h2>Commandes en retard</h2>
+                  <OrderMiniList orders={dashboard.late} onEdit={startEdit} />
+                </section>
+              )}
 
-          <section className="panel">
-            <h2>Soldes en attente</h2>
-            <OrderMiniList orders={dashboard.unpaid} onEdit={startEdit} showBalance />
-          </section>
+              {dashboard.unpaid.length > 0 && (
+                <section className="panel">
+                  <h2>Soldes en attente</h2>
+                  <OrderMiniList orders={dashboard.unpaid} onEdit={startEdit} showBalance />
+                </section>
+              )}
+            </>
+          )}
         </section>
       )}
 
