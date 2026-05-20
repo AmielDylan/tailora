@@ -3,7 +3,7 @@ import { AUTH_KEY, PIN_KEY } from '@/constants';
 import { PinScreen } from '@/components/PinScreen';
 import { AppDataProvider } from '@/context/AppDataContext';
 import { NavigationProvider } from '@/context/NavigationContext';
-import { PageRouter } from '@/components/layout/PageRouter';
+import { AppShell } from '@/components/layout/AppShell';
 
 export function App() {
   const [authenticated, setAuthenticated] = useState(() => localStorage.getItem(AUTH_KEY) === 'true');
@@ -26,7 +26,7 @@ export function App() {
   return (
     <AppDataProvider>
       <NavigationProvider>
-        <PageRouter onLock={lock} />
+        <AppShell onLock={lock} />
       </NavigationProvider>
     </AppDataProvider>
   );
