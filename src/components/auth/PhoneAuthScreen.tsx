@@ -10,8 +10,24 @@ type Credentials = { phone: string; password: string };
 
 type Props = { onSuccess: () => void };
 
+function beninPhoneDigits(value: string) {
+  const digits = value.replace(/\D/g, '').replace(/^229/, '');
+  if (!digits) return '';
+  if (digits.startsWith('01')) return digits.slice(0, 10);
+  return `01${digits.replace(/^0+/, '')}`.slice(0, 10);
+}
+
+function formatBeninPhone(value: string) {
+  return beninPhoneDigits(value).replace(/(\d{2})(?=\d)/g, '$1 ').trim();
+}
+
+function isValidBeninPhone(value: string) {
+  const digits = beninPhoneDigits(value);
+  return digits.length === 10 && digits.startsWith('01');
+}
+
 function localBeninPhone(value: string) {
-  return value.replace(/^\s*\+?229\s*/, '').trim();
+  return formatBeninPhone(value);
 }
 
 function fullBeninPhone(value: string) {
@@ -44,6 +60,7 @@ export function PhoneAuthScreen({ onSuccess }: Props) {
     const trimPass = password.trim();
 
     if (!trimPhone) { setError('Entrez votre numéro de téléphone.'); return; }
+    if (!isValidBeninPhone(trimPhone)) { setError('Entrez un numéro béninois valide au format 01 90 00 00 00.'); return; }
     if (trimPass.length < 6) { setError('Le mot de passe doit contenir au moins 6 caractères.'); return; }
 
     if (isRegistration) {
@@ -54,7 +71,7 @@ export function PhoneAuthScreen({ onSuccess }: Props) {
       onSuccess();
     } else {
       const stored = JSON.parse(localStorage.getItem(CREDENTIALS_KEY)!) as Credentials;
-      if ((completePhone === stored.phone || trimPhone === stored.phone) && trimPass === stored.password) {
+      if ((completePhone === stored.phone || trimPhone === stored.phone || beninPhoneDigits(stored.phone) === beninPhoneDigits(trimPhone)) && trimPass === stored.password) {
         localStorage.setItem(AUTH_KEY, 'true');
         onSuccess();
       } else {
@@ -125,7 +142,7 @@ export function PhoneAuthScreen({ onSuccess }: Props) {
                   autoComplete="tel-national"
                   placeholder="01 97 00 00 00"
                   value={phone}
-                  onChange={(e) => { setPhone(localBeninPhone(e.target.value)); setError(''); }}
+                  onChange={(e) => { setPhone(formatBeninPhone(e.target.value)); setError(''); }}
                   className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm outline-none"
                 />
               </div>
