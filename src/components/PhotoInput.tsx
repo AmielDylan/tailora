@@ -1,5 +1,5 @@
-import { type ChangeEvent, useState } from 'react';
-import { X } from 'lucide-react';
+import { type ChangeEvent, useRef, useState } from 'react';
+import { Camera, FolderOpen, ImageIcon, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type Props = {
@@ -14,11 +14,42 @@ type Props = {
 export function PhotoInput({ label, required, image, onFile, onUrl, onRemove }: Props) {
   const [tab, setTab] = useState<'file' | 'url'>('file');
   const [urlInput, setUrlInput] = useState('');
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const galleryRef = useRef<HTMLInputElement>(null);
+  const filesRef = useRef<HTMLInputElement>(null);
 
   function handleUrl(val: string) {
     setUrlInput(val);
     onUrl(val);
   }
+
+  function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
+    setDrawerOpen(false);
+    onFile(e);
+  }
+
+  const sources = [
+    {
+      label: 'Prendre une photo',
+      icon: Camera,
+      ref: cameraRef,
+      inputProps: { accept: 'image/*', capture: 'environment' as const },
+    },
+    {
+      label: 'Choisir dans la galerie',
+      icon: ImageIcon,
+      ref: galleryRef,
+      inputProps: { accept: 'image/*' },
+    },
+    {
+      label: 'Parcourir les fichiers',
+      icon: FolderOpen,
+      ref: filesRef,
+      inputProps: { accept: '*/*' },
+    },
+  ];
 
   return (
     <div className="flex flex-col gap-2">
@@ -65,14 +96,15 @@ export function PhotoInput({ label, required, image, onFile, onUrl, onRemove }: 
       </div>
 
       {tab === 'file' && (
-        <input
-          type="file"
-          accept="image/*"
-          capture="environment"
-          onChange={onFile}
-          className="text-xs text-muted-foreground file:mr-3 file:rounded-full file:border-0 file:bg-secondary file:px-3 file:py-1 file:text-xs file:font-medium file:text-foreground hover:file:bg-accent"
-        />
+        <button
+          type="button"
+          onClick={() => setDrawerOpen(true)}
+          className="w-full rounded-lg border border-border py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
+        >
+          Choisir une source…
+        </button>
       )}
+
       {tab === 'url' && (
         <input
           type="url"
@@ -81,6 +113,55 @@ export function PhotoInput({ label, required, image, onFile, onUrl, onRemove }: 
           onChange={(e) => handleUrl(e.target.value)}
           className="w-full rounded-lg border border-border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
         />
+      )}
+
+      {/* Hidden inputs, un par source */}
+      {sources.map(({ ref, inputProps }) => (
+        <input
+          key={inputProps.accept + (inputProps.capture ?? '')}
+          ref={ref}
+          type="file"
+          className="hidden"
+          onChange={handleFileChange}
+          {...inputProps}
+        />
+      ))}
+
+      {/* Bottom drawer */}
+      {drawerOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/40"
+            onClick={() => setDrawerOpen(false)}
+          />
+          <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl border-t border-border bg-background pb-safe">
+            <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-border" />
+            <p className="px-5 pb-2 pt-4 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              {label}
+            </p>
+            <ul className="divide-y divide-border">
+              {sources.map(({ label: srcLabel, icon: Icon, ref }) => (
+                <li key={srcLabel}>
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-3 px-5 py-4 text-sm font-medium text-foreground transition-colors active:bg-secondary"
+                    onClick={() => ref.current?.click()}
+                  >
+                    <Icon className="h-5 w-5 shrink-0 text-muted-foreground" strokeWidth={1.5} />
+                    {srcLabel}
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              onClick={() => setDrawerOpen(false)}
+              className="w-full py-4 text-sm font-medium text-muted-foreground"
+            >
+              Annuler
+            </button>
+          </div>
+        </>
       )}
     </div>
   );
