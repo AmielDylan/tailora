@@ -15,6 +15,9 @@ export type Garment = {
   quantity: number;
   wearerName?: string;
   measurementsNote?: string;
+  measurements?: Measurement[];
+  fabricPhoto?: string;
+  modelPhoto?: string;
   photo?: string;
   price?: number;
 };

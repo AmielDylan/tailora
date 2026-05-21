@@ -7,7 +7,7 @@ export function OrderNewPage() {
   return (
     <>
       <PageHeader title="Nouvelle commande" />
-      <div className="mx-auto max-w-xl px-4 py-6">
+      <div className="mx-auto max-w-5xl px-4 py-6">
         <OrderForm
           onSave={() => nav.navigate('orders')}
           onCancel={() => nav.pop()}

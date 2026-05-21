@@ -34,7 +34,7 @@ export function AppSidebar({ onLock, onLogout, pinEnabled }: { onLock: () => voi
       <SidebarHeader className="px-3 py-4">
         <div className="flex items-center gap-3 rounded-lg px-2 py-1.5">
           <div className="flex size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-            <Scissors className="size-4" />
+            <Scissors className="size-4" strokeWidth={1.25} />
           </div>
           <div className="min-w-0">
             <h1 className="truncate font-heading text-lg font-medium tracking-normal text-sidebar-foreground">
@@ -56,7 +56,7 @@ export function AppSidebar({ onLock, onLogout, pinEnabled }: { onLock: () => voi
                 onClick={() => navigate(route)}
                 className="h-9 gap-3 rounded-lg px-3"
               >
-                <Icon />
+                <Icon strokeWidth={1.25} />
                 <span>{label}</span>
                 {counters[route] !== undefined && (
                   <span className="ml-auto rounded bg-sidebar-accent/70 px-1 py-0.5 text-[0.65rem] tabular-nums text-muted-foreground">
@@ -78,21 +78,21 @@ export function AppSidebar({ onLock, onLogout, pinEnabled }: { onLock: () => voi
               onClick={() => navigate('profile')}
               className="h-9 gap-3 rounded-lg px-3"
             >
-              <User />
+              <User strokeWidth={1.25} />
               <span>Profil</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
           {pinEnabled && (
             <SidebarMenuItem>
               <SidebarMenuButton onClick={onLock} className="h-9 gap-3 rounded-lg px-3 text-muted-foreground hover:text-foreground">
-                <Lock />
+                <Lock strokeWidth={1.25} />
                 <span>Verrouiller</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           )}
           <SidebarMenuItem>
             <SidebarMenuButton onClick={onLogout} className="h-9 gap-3 rounded-lg px-3 text-muted-foreground hover:text-foreground">
-              <LogOut />
+              <LogOut strokeWidth={1.25} />
               <span>Se deconnecter</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
