@@ -1,26 +1,19 @@
-import { type ChangeEvent, type FormEvent, useState } from 'react';
-import type { Client, FormState, Order, Status } from '@/types';
-
-const COUNTRIES = [
-  { code: 'BJ', label: 'Bénin' },
-  { code: 'SN', label: 'Sénégal' },
-  { code: 'CI', label: "Côte d'Ivoire" },
-  { code: 'ML', label: 'Mali' },
-  { code: 'GN', label: 'Guinée' },
-  { code: 'BF', label: 'Burkina Faso' },
-  { code: 'TG', label: 'Togo' },
-  { code: 'NG', label: 'Nigeria' },
-  { code: 'CM', label: 'Cameroun' },
-  { code: 'FR', label: 'France' },
-];
-
-function toFlag(code: string) {
-  return code.toUpperCase().replace(/./g, (c) => String.fromCodePoint(c.charCodeAt(0) + 127397));
-}
-import { STATUSES, makeEmptyForm, defaultMeasurements } from '@/constants';
+import { type FormEvent, type ReactNode, useState } from 'react';
+import type { Client, FormState, Garment, Measurement, Order, Status } from '@/types';
+import { STATUSES, defaultMeasurements, makeEmptyForm } from '@/constants';
 import { balance, currency, garmentTotal, uid } from '@/helpers';
 import { useAppDataContext } from '@/context/AppDataContext';
-import { PhotoInput } from '@/components/PhotoInput';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { MeasurementsEditor } from '@/components/forms/MeasurementsEditor';
 import { GarmentsEditor } from '@/components/forms/GarmentsEditor';
 
@@ -29,6 +22,25 @@ type Props = {
   onSave?: (clientId: string) => void;
   onCancel?: () => void;
 };
+
+function textMeasurements(measurements?: Measurement[]) {
+  const source = measurements?.length ? measurements : defaultMeasurements;
+  return source.map((measurement) => ({ ...measurement, inputType: 'text' as const }));
+}
+
+function normalizeGarments(order: Order): Garment[] {
+  const garments = order.garments?.length
+    ? order.garments
+    : [{ id: uid('g'), description: '', fabricType: '', fabricUnit: 'm' as const, quantity: 1 }];
+
+  return garments.map((garment) => ({
+    ...garment,
+    fabricUnit: garment.fabricUnit ?? 'm',
+    measurements: textMeasurements(garment.measurements ?? order.measurements),
+    fabricPhoto: garment.fabricPhoto ?? order.fabricPhoto ?? '',
+    modelPhoto: garment.modelPhoto ?? garment.photo ?? order.modelPhoto ?? '',
+  }));
+}
 
 function orderToForm(order: Order): FormState {
   return {
@@ -40,17 +52,22 @@ function orderToForm(order: Order): FormState {
     deliveryAt: order.deliveryAt,
     status: order.status,
     notes: order.notes,
-    measurements: order.measurements?.length
-      ? order.measurements
-      : defaultMeasurements.map((m) => ({ ...m, value: '' })),
-    garments: order.garments?.length
-      ? order.garments
-      : [{ id: uid('g'), description: '', fabricType: '', quantity: 1 }],
+    measurements: textMeasurements(order.measurements),
+    garments: normalizeGarments(order),
     totalPrice: order.totalPrice,
     deposit: order.deposit,
     fabricPhoto: order.fabricPhoto,
     modelPhoto: order.modelPhoto,
   };
+}
+
+function Section({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="flex flex-col gap-4 rounded-lg border border-border/70 bg-card p-4">
+      <h2 className="text-sm font-medium text-foreground">{title}</h2>
+      {children}
+    </section>
+  );
 }
 
 export function OrderForm({ orderId, onSave, onCancel }: Props) {
@@ -60,7 +77,6 @@ export function OrderForm({ orderId, onSave, onCancel }: Props) {
   const [form, setForm] = useState<FormState>(() =>
     existingOrder ? orderToForm(existingOrder) : makeEmptyForm(),
   );
-  const [modelPhotoError, setModelPhotoError] = useState(false);
 
   function updateForm<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((cur) => ({ ...cur, [key]: value }));
@@ -81,20 +97,8 @@ export function OrderForm({ orderId, onSave, onCancel }: Props) {
     }
   }
 
-  function readPhoto(event: ChangeEvent<HTMLInputElement>, key: 'fabricPhoto' | 'modelPhoto') {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      updateForm(key, String(reader.result));
-      if (key === 'modelPhoto') setModelPhotoError(false);
-    };
-    reader.readAsDataURL(file);
-  }
-
-  function setPhotoUrl(url: string, key: 'fabricPhoto' | 'modelPhoto') {
-    updateForm(key, url);
-    if (key === 'modelPhoto' && url) setModelPhotoError(false);
+  function updateMeasurements(measurements: Measurement[]) {
+    updateForm('measurements', textMeasurements(measurements));
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -103,12 +107,13 @@ export function OrderForm({ orderId, onSave, onCancel }: Props) {
     const normalizedPhone = form.clientPhone.trim();
     if (!normalizedName || !normalizedPhone || !form.deliveryAt || !form.fabricReceivedAt) return;
 
-    if (!form.modelPhoto) {
-      setModelPhotoError(true);
-      return;
-    }
-
-    const garmentsFilled = form.garments.filter((g) => g.description.trim());
+    const garmentsFilled = form.garments
+      .filter((g) => g.description.trim())
+      .map((g) => ({
+        ...g,
+        description: g.description.trim(),
+        measurements: textMeasurements(g.measurements),
+      }));
     if (!garmentsFilled.length) return;
 
     let clientId = form.clientId;
@@ -121,7 +126,7 @@ export function OrderForm({ orderId, onSave, onCancel }: Props) {
 
     if (existingClient) {
       clientId = existingClient.id;
-      upsertClient({ ...existingClient, name: normalizedName, phone: normalizedPhone, address: form.clientAddress || existingClient.address, country: undefined });
+      upsertClient({ ...existingClient, name: normalizedName, phone: normalizedPhone, address: form.clientAddress || existingClient.address });
     } else {
       clientId = uid('client');
       upsertClient({ id: clientId, name: normalizedName, phone: normalizedPhone, address: form.clientAddress });
@@ -136,9 +141,9 @@ export function OrderForm({ orderId, onSave, onCancel }: Props) {
       clientName: normalizedName,
       clientPhone: normalizedPhone,
       clientAddress: form.clientAddress.trim(),
-      clientCountry: undefined,
       totalPrice: computedTotal > 0 ? computedTotal : Number(form.totalPrice || 0),
       deposit: Number(form.deposit || 0),
+      measurements: textMeasurements(form.measurements),
       garments: garmentsFilled,
       createdAt: orderId
         ? (orders.find((o) => o.id === orderId)?.createdAt ?? new Date().toISOString())
@@ -146,7 +151,7 @@ export function OrderForm({ orderId, onSave, onCancel }: Props) {
     };
 
     upsertOrderRecord(payload);
-    setToast(orderId ? 'Commande mise à jour ✓' : 'Commande ajoutée ✓');
+    setToast(orderId ? 'Commande mise à jour' : 'Commande ajoutée');
     onSave?.(clientId);
   }
 
@@ -155,189 +160,154 @@ export function OrderForm({ orderId, onSave, onCancel }: Props) {
   const bal = balance({ totalPrice: effectiveTotal, deposit: form.deposit });
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      {/* Client selection */}
-      <div className="space-y-1.5">
-        <label className="block text-sm font-medium text-foreground">Client existant</label>
-        <select
-          value={form.clientId}
-          onChange={(e) => chooseClient(e.target.value)}
-          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-        >
-          <option value="">Nouveau client</option>
-          {clients.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name} · {c.phone}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <label className="block text-sm font-medium text-foreground">Nom *</label>
-          <input
-            value={form.clientName}
-            onChange={(e) => updateForm('clientName', e.target.value)}
-            required
-            placeholder="Awa Diop"
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-          />
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+      <Section title="Client">
+        <div className="grid gap-3 md:grid-cols-2">
+          <label className="flex flex-col gap-1.5 md:col-span-2">
+            <span className="text-sm font-medium text-foreground">Client existant</span>
+            <Select value={form.clientId || 'new'} onValueChange={(value) => chooseClient(value === 'new' ? '' : value)}>
+              <SelectTrigger className="w-full bg-background">
+                <SelectValue placeholder="Nouveau client" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="new">Nouveau client</SelectItem>
+                  {clients.map((client) => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.name} · {client.phone}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium text-foreground">Nom *</span>
+            <Input
+              value={form.clientName}
+              onChange={(e) => updateForm('clientName', e.target.value)}
+              required
+              placeholder="Awa Diop"
+            />
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium text-foreground">Téléphone *</span>
+            <Input
+              value={form.clientPhone}
+              onChange={(e) => updateForm('clientPhone', e.target.value)}
+              required
+              inputMode="tel"
+              placeholder="+221 77 000 00 00"
+            />
+          </label>
+          <label className="flex flex-col gap-1.5 md:col-span-2">
+            <span className="text-sm font-medium text-foreground">Adresse</span>
+            <Input
+              value={form.clientAddress}
+              onChange={(e) => updateForm('clientAddress', e.target.value)}
+              placeholder="Quartier, ville"
+            />
+          </label>
         </div>
-        <div className="space-y-1.5">
-          <label className="block text-sm font-medium text-foreground">Téléphone *</label>
-          <input
-            value={form.clientPhone}
-            onChange={(e) => updateForm('clientPhone', e.target.value)}
-            required
-            inputMode="tel"
-            placeholder="+221 77 000 00 00"
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-          />
-        </div>
-      </div>
+      </Section>
 
-      <div className="space-y-1.5">
-        <div className="space-y-1.5">
-          <label className="block text-sm font-medium text-foreground">Adresse</label>
-          <input
-            value={form.clientAddress}
-            onChange={(e) => updateForm('clientAddress', e.target.value)}
-            placeholder="Quartier, ville"
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-          />
+      <Section title="Commande">
+        <div className="grid gap-3 md:grid-cols-3">
+          <label className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium text-foreground">Réception tissu *</span>
+            <Input
+              type="date"
+              value={form.fabricReceivedAt}
+              onChange={(e) => updateForm('fabricReceivedAt', e.target.value)}
+              required
+            />
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium text-foreground">Livraison prévue *</span>
+            <Input
+              type="date"
+              value={form.deliveryAt}
+              onChange={(e) => updateForm('deliveryAt', e.target.value)}
+              required
+            />
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium text-foreground">Statut</span>
+            <Select value={form.status} onValueChange={(value) => updateForm('status', value as Status)}>
+              <SelectTrigger className="w-full bg-background">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {STATUSES.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </label>
         </div>
-      </div>
+      </Section>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <label className="block text-sm font-medium text-foreground">Réception tissu *</label>
-          <input
-            type="date"
-            value={form.fabricReceivedAt}
-            onChange={(e) => updateForm('fabricReceivedAt', e.target.value)}
-            required
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <label className="block text-sm font-medium text-foreground">Livraison prévue *</label>
-          <input
-            type="date"
-            value={form.deliveryAt}
-            onChange={(e) => updateForm('deliveryAt', e.target.value)}
-            required
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-          />
-        </div>
-      </div>
+      <Section title="Mensurations client">
+        <MeasurementsEditor measurements={form.measurements} onChange={updateMeasurements} />
+      </Section>
 
-      <div className="space-y-1.5">
-        <label className="block text-sm font-medium text-foreground">Statut</label>
-        <select
-          value={form.status}
-          onChange={(e) => updateForm('status', e.target.value as Status)}
-          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-        >
-          {STATUSES.map((s) => (
-            <option key={s}>{s}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* Mesures */}
-      <div className="space-y-3 rounded-lg border border-border p-4">
-        <p className="text-sm font-medium text-foreground">Mesures</p>
-        <MeasurementsEditor
-          measurements={form.measurements}
-          onChange={(m) => updateForm('measurements', m)}
+      <Section title="Vêtements">
+        <GarmentsEditor
+          garments={form.garments}
+          baseMeasurements={form.measurements}
+          onChange={(g) => updateForm('garments', g)}
         />
-      </div>
+      </Section>
 
-      {/* Vêtements */}
-      <div className="space-y-3 rounded-lg border border-border p-4">
-        <p className="text-sm font-medium text-foreground">Vêtements</p>
-        <GarmentsEditor garments={form.garments} onChange={(g) => updateForm('garments', g)} />
-      </div>
-
-      {/* Photos */}
-      <div className="grid grid-cols-2 gap-4">
-        <PhotoInput
-          label="Photo du tissu"
-          image={form.fabricPhoto}
-          onFile={(e) => readPhoto(e, 'fabricPhoto')}
-          onUrl={(url) => setPhotoUrl(url, 'fabricPhoto')}
-          onRemove={() => updateForm('fabricPhoto', '')}
-        />
-        <PhotoInput
-          label="Photo du modèle"
-          required
-          image={form.modelPhoto}
-          onFile={(e) => readPhoto(e, 'modelPhoto')}
-          onUrl={(url) => setPhotoUrl(url, 'modelPhoto')}
-          onRemove={() => { updateForm('modelPhoto', ''); setModelPhotoError(false); }}
-        />
-      </div>
-      {modelPhotoError && (
-        <p className="text-sm text-destructive">La photo du modèle est obligatoire.</p>
-      )}
-
-      {/* Notes */}
-      <div className="space-y-1.5">
-        <label className="block text-sm font-medium text-foreground">Notes</label>
-        <textarea
-          value={form.notes}
-          onChange={(e) => updateForm('notes', e.target.value)}
-          placeholder="Remarques, détails supplémentaires…"
-          rows={3}
-          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-        />
-      </div>
-
-      {/* Pricing */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <label className="block text-sm font-medium text-foreground">Prix total (FCFA)</label>
-          <input
-            type="number"
-            min="0"
-            value={effectiveTotal}
-            onChange={(e) => updateForm('totalPrice', Number(e.target.value))}
-            disabled={subTotal > 0}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-          />
+      <Section title="Prix et notes">
+        <div className="grid gap-3 md:grid-cols-3">
+          <label className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium text-foreground">Prix total (FCFA)</span>
+            <Input
+              type="number"
+              min="0"
+              value={effectiveTotal}
+              onChange={(e) => updateForm('totalPrice', Number(e.target.value))}
+              disabled={subTotal > 0}
+            />
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium text-foreground">Déjà payé (FCFA)</span>
+            <Input
+              type="number"
+              min="0"
+              value={form.deposit}
+              onChange={(e) => updateForm('deposit', Number(e.target.value))}
+            />
+          </label>
+          <div className="flex flex-col justify-end gap-1.5 rounded-lg bg-muted px-3 py-2">
+            <span className="text-sm text-muted-foreground">Reste à payer</span>
+            <span className="text-lg font-medium text-foreground">{currency(bal)}</span>
+          </div>
+          <label className="flex flex-col gap-1.5 md:col-span-3">
+            <span className="text-sm font-medium text-foreground">Notes</span>
+            <Textarea
+              value={form.notes}
+              onChange={(e) => updateForm('notes', e.target.value)}
+              placeholder="Remarques, détails supplémentaires..."
+              rows={3}
+            />
+          </label>
         </div>
-        <div className="space-y-1.5">
-          <label className="block text-sm font-medium text-foreground">Avance (FCFA)</label>
-          <input
-            type="number"
-            min="0"
-            value={form.deposit}
-            onChange={(e) => updateForm('deposit', Number(e.target.value))}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-          />
-        </div>
-      </div>
-      <p className="text-sm text-muted-foreground">
-        Reste à payer : <span className="font-semibold text-foreground">{currency(bal)}</span>
-      </p>
+      </Section>
 
-      {/* Actions */}
-      <div className="flex gap-3 pt-2">
-        <button
-          type="submit"
-          className="flex-1 rounded-full bg-foreground py-2.5 text-sm font-medium text-background transition-opacity hover:opacity-80"
-        >
+      <div className="flex flex-col gap-3 pt-2 sm:flex-row">
+        <Button type="submit" className="flex-1">
           {orderId ? 'Enregistrer les modifications' : 'Ajouter la commande'}
-        </button>
+        </Button>
         {onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-full border border-border px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
-          >
+          <Button type="button" variant="outline" onClick={onCancel}>
             Annuler
-          </button>
+          </Button>
         )}
       </div>
     </form>

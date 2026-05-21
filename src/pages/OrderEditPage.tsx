@@ -7,7 +7,7 @@ export function OrderEditPage({ orderId }: { orderId: string }) {
   return (
     <>
       <PageHeader title="Modifier la commande" />
-      <div className="mx-auto max-w-xl px-4 py-6">
+      <div className="mx-auto max-w-5xl px-4 py-6">
         <OrderForm
           orderId={orderId}
           onSave={() => nav.pop()}
