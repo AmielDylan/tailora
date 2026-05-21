@@ -1,13 +1,14 @@
 import { type ChangeEvent, useRef, useState } from 'react';
-import { Camera, ExternalLink, FolderOpen, ImageIcon, Link, Plus, X } from 'lucide-react';
+import { Camera, ExternalLink, FolderOpen, ImageIcon, Link, Loader2, Plus, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ImageTooLargeError, compressImage } from '@/lib/image';
 
 type Props = {
   label: string;
   required?: boolean;
   image?: string;
   links?: string[];
-  onFile: (e: ChangeEvent<HTMLInputElement>) => void;
+  onImage: (base64: string) => void;
   onAddLink: (url: string) => void;
   onRemoveLink: (index: number) => void;
   onRemove: () => void;
@@ -26,19 +27,34 @@ function shortUrl(url: string) {
   }
 }
 
-export function PhotoInput({ label, required, image, links = [], onFile, onAddLink, onRemoveLink, onRemove }: Props) {
+export function PhotoInput({ label, required, image, links = [], onImage, onAddLink, onRemoveLink, onRemove }: Props) {
   const [tab, setTab] = useState<'file' | 'url'>('file');
   const [linkInput, setLinkInput] = useState('');
   const [imgError, setImgError] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [compressing, setCompressing] = useState(false);
+  const [fileError, setFileError] = useState<string | null>(null);
 
   const cameraRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
   const filesRef = useRef<HTMLInputElement>(null);
 
-  function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
+  async function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
     setDrawerOpen(false);
-    onFile(e);
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setFileError(null);
+    setCompressing(true);
+    try {
+      const base64 = await compressImage(file);
+      onImage(base64);
+    } catch (err) {
+      setFileError(err instanceof ImageTooLargeError ? err.message : 'Impossible de lire cette image.');
+    } finally {
+      setCompressing(false);
+      e.target.value = '';
+    }
   }
 
   function addLink() {
@@ -80,12 +96,13 @@ export function PhotoInput({ label, required, image, links = [], onFile, onAddLi
 
       {/* Zone aperçu */}
       <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-border bg-secondary">
-        {image && isDataUrl(image) ? (
-          <img
-            src={image}
-            alt={label}
-            className="h-full w-full object-cover"
-          />
+        {compressing ? (
+          <div className="flex h-full flex-col items-center justify-center gap-2">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" strokeWidth={1.5} />
+            <span className="text-xs text-muted-foreground">Compression…</span>
+          </div>
+        ) : image && isDataUrl(image) ? (
+          <img src={image} alt={label} className="h-full w-full object-cover" />
         ) : image && !imgError ? (
           <img
             src={image}
@@ -106,7 +123,7 @@ export function PhotoInput({ label, required, image, links = [], onFile, onAddLi
             Aucune photo
           </div>
         )}
-        {(hasImage || hasLinks) && (
+        {(hasImage || hasLinks) && !compressing && (
           <button
             type="button"
             onClick={onRemove}
@@ -117,6 +134,10 @@ export function PhotoInput({ label, required, image, links = [], onFile, onAddLi
           </button>
         )}
       </div>
+
+      {fileError && (
+        <p className="text-xs text-destructive">{fileError}</p>
+      )}
 
       {/* Onglets */}
       <div className="flex rounded-lg border border-border text-sm">
@@ -141,7 +162,8 @@ export function PhotoInput({ label, required, image, links = [], onFile, onAddLi
         <button
           type="button"
           onClick={() => setDrawerOpen(true)}
-          className="w-full rounded-lg border border-border py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
+          disabled={compressing}
+          className="w-full rounded-lg border border-border py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-foreground hover:text-foreground disabled:opacity-50"
         >
           Choisir une source…
         </button>
