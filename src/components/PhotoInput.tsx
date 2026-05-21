@@ -15,6 +15,7 @@ export function PhotoInput({ label, required, image, onFile, onUrl, onRemove }: 
   const [tab, setTab] = useState<'file' | 'url'>('file');
   const [urlInput, setUrlInput] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [urlError, setUrlError] = useState(false);
 
   const cameraRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
@@ -22,6 +23,7 @@ export function PhotoInput({ label, required, image, onFile, onUrl, onRemove }: 
 
   function handleUrl(val: string) {
     setUrlInput(val);
+    setUrlError(false);
     onUrl(val);
   }
 
@@ -59,7 +61,13 @@ export function PhotoInput({ label, required, image, onFile, onUrl, onRemove }: 
 
       <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-border bg-secondary">
         {image ? (
-          <img src={image} alt={label} className="h-full w-full object-cover" />
+          <img
+            src={image}
+            alt={label}
+            className="h-full w-full object-cover"
+            onError={() => setUrlError(true)}
+            onLoad={() => setUrlError(false)}
+          />
         ) : (
           <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
             Aucune photo
@@ -106,13 +114,24 @@ export function PhotoInput({ label, required, image, onFile, onUrl, onRemove }: 
       )}
 
       {tab === 'url' && (
-        <input
-          type="url"
-          placeholder="https://…"
-          value={urlInput}
-          onChange={(e) => handleUrl(e.target.value)}
-          className="w-full rounded-lg border border-border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
-        />
+        <div className="flex flex-col gap-1.5">
+          <input
+            type="url"
+            placeholder="https://…"
+            value={urlInput}
+            onChange={(e) => handleUrl(e.target.value)}
+            className="w-full rounded-lg border border-border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+          />
+          {urlError ? (
+            <p className="text-xs text-destructive">
+              Lien inaccessible. Pinterest, Instagram et Facebook ne donnent pas de liens directs vers les images — enregistre la photo sur ton téléphone puis utilise "Importer".
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Lien direct vers une image uniquement (.jpg, .png…). Les liens Pinterest ou Instagram ne fonctionnent pas.
+            </p>
+          )}
+        </div>
       )}
 
       {/* Hidden inputs, un par source */}
