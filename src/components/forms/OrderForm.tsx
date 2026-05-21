@@ -31,10 +31,11 @@ function textMeasurements(measurements?: Measurement[]) {
 function normalizeGarments(order: Order): Garment[] {
   const garments = order.garments?.length
     ? order.garments
-    : [{ id: uid('g'), description: '', fabricType: '', quantity: 1 }];
+    : [{ id: uid('g'), description: '', fabricType: '', fabricUnit: 'm' as const, quantity: 1 }];
 
   return garments.map((garment) => ({
     ...garment,
+    fabricUnit: garment.fabricUnit ?? 'm',
     measurements: textMeasurements(garment.measurements ?? order.measurements),
     fabricPhoto: garment.fabricPhoto ?? order.fabricPhoto ?? '',
     modelPhoto: garment.modelPhoto ?? garment.photo ?? order.modelPhoto ?? '',

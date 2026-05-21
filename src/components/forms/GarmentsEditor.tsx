@@ -3,6 +3,13 @@ import type { Garment, Measurement } from '@/types';
 import { uid } from '@/helpers';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { PhotoInput } from '@/components/PhotoInput';
 import { MeasurementsEditor } from '@/components/forms/MeasurementsEditor';
@@ -44,6 +51,7 @@ export function GarmentsEditor({ garments, baseMeasurements, onChange }: Props) 
         id: uid('g'),
         description: '',
         fabricType: '',
+        fabricUnit: 'm',
         quantity: 1,
         measurements: copyMeasurements(baseMeasurements),
         fabricPhoto: '',
@@ -101,8 +109,31 @@ export function GarmentsEditor({ garments, baseMeasurements, onChange }: Props) 
                 onChange={(e) => update(g.id, 'fabricType', e.target.value)}
               />
             </label>
+            <div className="flex flex-col gap-1.5">
+              <span className="text-sm font-medium text-foreground">Quantité de tissu</span>
+              <div className="grid grid-cols-[minmax(0,1fr)_88px] gap-2">
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  inputMode="decimal"
+                  placeholder="Ex. 3.5"
+                  value={g.fabricQuantity ?? ''}
+                  onChange={(e) => update(g.id, 'fabricQuantity', e.target.value ? Number(e.target.value) : undefined)}
+                />
+                <Select value={g.fabricUnit ?? 'm'} onValueChange={(value) => update(g.id, 'fabricUnit', value as Garment['fabricUnit'])}>
+                  <SelectTrigger className="w-full bg-background">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="m">m</SelectItem>
+                    <SelectItem value="cm">cm</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-foreground">Quantité</span>
+              <span className="text-sm font-medium text-foreground">Nombre de pièces</span>
               <Input
                 type="number"
                 min="1"
