@@ -26,10 +26,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 function StatTile({ label, value, icon: Icon, tone = 'default', preview, onClick }: StatTileProps) {
   return (
     <BentoCard
-      role="button"
-      tabIndex={0}
       onClick={onClick}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClick(); }}
       className="flex min-h-36 cursor-pointer flex-col justify-between gap-3 p-4 shadow-none transition-colors hover:bg-muted/50"
     >
       <div className="flex items-center justify-between gap-3">
