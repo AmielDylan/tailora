@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { PIN_KEY, AUTH_KEY } from '@/constants';
 import { cn } from '@/lib/utils';
 
-const BG_IMAGES = ['/images/tailor_men.png', '/images/tailor_women.png'];
+const BG_IMAGES = ['/images/tailor_men.webp', '/images/tailor_women.webp'];
 const MAX_ATTEMPTS = 3;
 
 type Props = {

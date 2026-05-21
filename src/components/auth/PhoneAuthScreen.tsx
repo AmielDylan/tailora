@@ -3,7 +3,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { AUTH_KEY, CREDENTIALS_KEY } from '@/constants';
 import { cn } from '@/lib/utils';
 
-const BG_IMAGES = ['/images/tailor_men.png', '/images/tailor_women.png'];
+const BG_IMAGES = ['/images/tailor_men.webp', '/images/tailor_women.webp'];
 const BENIN_DIAL_CODE = '+229';
 
 type Credentials = { phone: string; password: string };
