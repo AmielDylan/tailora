@@ -165,8 +165,7 @@ export function OrderForm({ orderId, onSave, onCancel }: Props) {
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       <Section title="Client">
         <div className="grid gap-3 md:grid-cols-2">
-          <label className="flex flex-col gap-1.5 md:col-span-2">
-            <span className="text-sm font-medium text-foreground">Client existant</span>
+          <div className="md:col-span-2">
             <Select value={form.clientId || 'new'} onValueChange={(value) => chooseClient(value === 'new' ? '' : value)}>
               <SelectTrigger className="w-full bg-background">
                 <SelectValue placeholder="Nouveau client" />
@@ -182,7 +181,7 @@ export function OrderForm({ orderId, onSave, onCancel }: Props) {
                 </SelectGroup>
               </SelectContent>
             </Select>
-          </label>
+          </div>
           <label className="flex flex-col gap-1.5">
             <span className="text-sm font-medium text-foreground">Nom *</span>
             <Input
