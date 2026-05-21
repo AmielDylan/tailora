@@ -4,10 +4,20 @@ import { AUTH_KEY, CREDENTIALS_KEY } from '@/constants';
 import { cn } from '@/lib/utils';
 
 const BG_IMAGES = ['/images/tailor_men.png', '/images/tailor_women.png'];
+const BENIN_DIAL_CODE = '+229';
+const BENIN_FLAG = '🇧🇯';
 
 type Credentials = { phone: string; password: string };
 
 type Props = { onSuccess: () => void };
+
+function localBeninPhone(value: string) {
+  return value.replace(/^\s*\+?229\s*/, '').trim();
+}
+
+function fullBeninPhone(value: string) {
+  return `${BENIN_DIAL_CODE} ${localBeninPhone(value)}`.trim();
+}
 
 export function PhoneAuthScreen({ onSuccess }: Props) {
   const isRegistration = !localStorage.getItem(CREDENTIALS_KEY);
@@ -30,7 +40,8 @@ export function PhoneAuthScreen({ onSuccess }: Props) {
     e.preventDefault();
     setError('');
 
-    const trimPhone = phone.trim();
+    const trimPhone = localBeninPhone(phone);
+    const completePhone = fullBeninPhone(phone);
     const trimPass = password.trim();
 
     if (!trimPhone) { setError('Entrez votre numéro de téléphone.'); return; }
@@ -38,13 +49,13 @@ export function PhoneAuthScreen({ onSuccess }: Props) {
 
     if (isRegistration) {
       if (trimPass !== confirm.trim()) { setError('Les mots de passe ne correspondent pas.'); return; }
-      const creds: Credentials = { phone: trimPhone, password: trimPass };
+      const creds: Credentials = { phone: completePhone, password: trimPass };
       localStorage.setItem(CREDENTIALS_KEY, JSON.stringify(creds));
       localStorage.setItem(AUTH_KEY, 'true');
       onSuccess();
     } else {
       const stored = JSON.parse(localStorage.getItem(CREDENTIALS_KEY)!) as Credentials;
-      if (trimPhone === stored.phone && trimPass === stored.password) {
+      if ((completePhone === stored.phone || trimPhone === stored.phone) && trimPass === stored.password) {
         localStorage.setItem(AUTH_KEY, 'true');
         onSuccess();
       } else {
@@ -94,15 +105,24 @@ export function PhoneAuthScreen({ onSuccess }: Props) {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <label className="block text-sm font-medium text-foreground">Numéro de téléphone</label>
-              <input
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                placeholder="+229 97 00 00 00"
-                value={phone}
-                onChange={(e) => { setPhone(e.target.value); setError(''); }}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
-              />
+              <div className="flex overflow-hidden rounded-lg border border-border bg-background focus-within:ring-2 focus-within:ring-ring">
+                <div
+                  aria-label="Indicatif Bénin"
+                  className="flex shrink-0 items-center gap-2 border-r border-border bg-muted px-3 text-sm font-medium text-foreground"
+                >
+                  <span>{BENIN_FLAG}</span>
+                  <span>{BENIN_DIAL_CODE}</span>
+                </div>
+                <input
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel-national"
+                  placeholder="97 00 00 00"
+                  value={phone}
+                  onChange={(e) => { setPhone(localBeninPhone(e.target.value)); setError(''); }}
+                  className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm outline-none"
+                />
+              </div>
             </div>
 
             <div className="space-y-1.5">
