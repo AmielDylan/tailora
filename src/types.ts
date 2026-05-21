@@ -21,6 +21,8 @@ export type Garment = {
   fabricPhoto?: string;
   modelPhoto?: string;
   photo?: string;
+  fabricLinks?: string[];
+  modelLinks?: string[];
   price?: number;
 };
 

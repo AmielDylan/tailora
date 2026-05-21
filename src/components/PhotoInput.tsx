@@ -1,33 +1,51 @@
 import { type ChangeEvent, useRef, useState } from 'react';
-import { Camera, FolderOpen, ImageIcon, X } from 'lucide-react';
+import { Camera, ExternalLink, FolderOpen, ImageIcon, Link, Plus, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type Props = {
   label: string;
   required?: boolean;
   image?: string;
+  links?: string[];
   onFile: (e: ChangeEvent<HTMLInputElement>) => void;
-  onUrl: (url: string) => void;
+  onAddLink: (url: string) => void;
+  onRemoveLink: (index: number) => void;
   onRemove: () => void;
 };
 
-export function PhotoInput({ label, required, image, onFile, onUrl, onRemove }: Props) {
+function isDataUrl(s: string) {
+  return s.startsWith('data:');
+}
+
+function shortUrl(url: string) {
+  try {
+    const u = new URL(url);
+    return u.hostname + (u.pathname.length > 20 ? u.pathname.slice(0, 20) + '…' : u.pathname);
+  } catch {
+    return url.slice(0, 40) + (url.length > 40 ? '…' : '');
+  }
+}
+
+export function PhotoInput({ label, required, image, links = [], onFile, onAddLink, onRemoveLink, onRemove }: Props) {
   const [tab, setTab] = useState<'file' | 'url'>('file');
-  const [urlInput, setUrlInput] = useState('');
+  const [linkInput, setLinkInput] = useState('');
+  const [imgError, setImgError] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const cameraRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
   const filesRef = useRef<HTMLInputElement>(null);
 
-  function handleUrl(val: string) {
-    setUrlInput(val);
-    onUrl(val);
-  }
-
   function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
     setDrawerOpen(false);
     onFile(e);
+  }
+
+  function addLink() {
+    const url = linkInput.trim();
+    if (!url) return;
+    onAddLink(url);
+    setLinkInput('');
   }
 
   const sources = [
@@ -51,21 +69,44 @@ export function PhotoInput({ label, required, image, onFile, onUrl, onRemove }: 
     },
   ];
 
+  const hasImage = !!image && (isDataUrl(image) || !imgError);
+  const hasLinks = links.length > 0;
+
   return (
     <div className="flex flex-col gap-2">
       <span className="text-sm font-medium text-foreground">
         {label}{required && <span className="ml-0.5 text-destructive">*</span>}
       </span>
 
+      {/* Zone aperçu */}
       <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-border bg-secondary">
-        {image ? (
-          <img src={image} alt={label} className="h-full w-full object-cover" />
+        {image && isDataUrl(image) ? (
+          <img
+            src={image}
+            alt={label}
+            className="h-full w-full object-cover"
+          />
+        ) : image && !imgError ? (
+          <img
+            src={image}
+            alt={label}
+            className="h-full w-full object-cover"
+            onError={() => setImgError(true)}
+            onLoad={() => setImgError(false)}
+          />
+        ) : hasLinks ? (
+          <div className="flex h-full flex-col items-center justify-center gap-1.5">
+            <Link className="h-5 w-5 text-muted-foreground" strokeWidth={1.25} />
+            <span className="text-xs text-muted-foreground">
+              {links.length} lien{links.length > 1 ? 's' : ''} de référence
+            </span>
+          </div>
         ) : (
           <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
             Aucune photo
           </div>
         )}
-        {image && (
+        {(hasImage || hasLinks) && (
           <button
             type="button"
             onClick={onRemove}
@@ -77,6 +118,7 @@ export function PhotoInput({ label, required, image, onFile, onUrl, onRemove }: 
         )}
       </div>
 
+      {/* Onglets */}
       <div className="flex rounded-lg border border-border text-sm">
         {(['file', 'url'] as const).map((t) => (
           <button
@@ -90,7 +132,7 @@ export function PhotoInput({ label, required, image, onFile, onUrl, onRemove }: 
                 : 'text-muted-foreground hover:text-foreground',
             )}
           >
-            {t === 'file' ? 'Importer' : 'Lien URL'}
+            {t === 'file' ? 'Importer' : `Liens${links.length > 0 ? ` (${links.length})` : ''}`}
           </button>
         ))}
       </div>
@@ -106,13 +148,58 @@ export function PhotoInput({ label, required, image, onFile, onUrl, onRemove }: 
       )}
 
       {tab === 'url' && (
-        <input
-          type="url"
-          placeholder="https://…"
-          value={urlInput}
-          onChange={(e) => handleUrl(e.target.value)}
-          className="w-full rounded-lg border border-border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
-        />
+        <div className="flex flex-col gap-2">
+          <div className="flex gap-2">
+            <input
+              type="url"
+              placeholder="https://pin.it/…"
+              value={linkInput}
+              onChange={(e) => setLinkInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addLink())}
+              className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+            />
+            <button
+              type="button"
+              onClick={addLink}
+              className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+            >
+              <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
+              Ajouter
+            </button>
+          </div>
+
+          {links.length > 0 && (
+            <ul className="flex flex-col divide-y divide-border rounded-lg border border-border">
+              {links.map((link, i) => (
+                <li key={i} className="flex items-center gap-2 px-3 py-2">
+                  <a
+                    href={link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex min-w-0 flex-1 items-center gap-1.5 text-xs text-foreground"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground" strokeWidth={1.5} />
+                    <span className="truncate">{shortUrl(link)}</span>
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => onRemoveLink(i)}
+                    aria-label="Supprimer"
+                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-3.5 w-3.5" strokeWidth={1.5} />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {links.length === 0 && (
+            <p className="text-xs text-muted-foreground">
+              Ajoute des liens Pinterest, Instagram… Ils s'ouvriront dans le navigateur.
+            </p>
+          )}
+        </div>
       )}
 
       {/* Hidden inputs, un par source */}
