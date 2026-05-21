@@ -68,7 +68,6 @@ export function PhotoInput({ label, required, image, onFile, onUrl, onRemove }: 
         <input
           type="file"
           accept="image/*"
-          capture="environment"
           onChange={onFile}
           className="text-xs text-muted-foreground file:mr-3 file:rounded-full file:border-0 file:bg-secondary file:px-3 file:py-1 file:text-xs file:font-medium file:text-foreground hover:file:bg-accent"
         />
