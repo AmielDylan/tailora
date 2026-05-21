@@ -42,7 +42,7 @@ export const demoOrders: Order[] = [
       { id: 'm-4', label: 'Longueur robe', value: '130', inputType: 'text' },
     ],
     garments: [
-      { id: 'g-1', description: 'Robe longue manches trois-quarts', fabricType: 'Wax', quantity: 1 },
+      { id: 'g-1', description: 'Robe longue manches trois-quarts', fabricType: 'Wax', fabricQuantity: 4, fabricUnit: 'm', quantity: 1 },
     ],
     totalPrice: 35000,
     deposit: 15000,
@@ -65,8 +65,8 @@ export const demoOrders: Order[] = [
       { id: 'm-4', label: 'Longueur robe', value: '120', inputType: 'text' },
     ],
     garments: [
-      { id: 'g-2', description: 'Boubou simple', fabricType: 'Bazin', quantity: 1 },
-      { id: 'g-3', description: 'Ensemble enfant', fabricType: 'Wax', quantity: 2 },
+      { id: 'g-2', description: 'Boubou simple', fabricType: 'Bazin', fabricQuantity: 350, fabricUnit: 'cm', quantity: 1 },
+      { id: 'g-3', description: 'Ensemble enfant', fabricType: 'Wax', fabricQuantity: 2.5, fabricUnit: 'm', quantity: 2 },
     ],
     totalPrice: 28000,
     deposit: 28000,
@@ -85,7 +85,7 @@ export function makeEmptyForm(): FormState {
     status: 'Reçue',
     notes: '',
     measurements: defaultMeasurements.map((m) => ({ ...m, value: '' })),
-    garments: [{ id: uid('g'), description: '', fabricType: '', quantity: 1, measurements: defaultMeasurements.map((m) => ({ ...m })) }],
+    garments: [{ id: uid('g'), description: '', fabricType: '', fabricUnit: 'm', quantity: 1, measurements: defaultMeasurements.map((m) => ({ ...m })) }],
     totalPrice: 0,
     deposit: 0,
     fabricPhoto: '',

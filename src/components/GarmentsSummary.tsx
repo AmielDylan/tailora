@@ -2,6 +2,11 @@ import type { Garment } from '@/types';
 import { currency } from '@/helpers';
 import { MeasurementsSummary } from '@/components/MeasurementsSummary';
 
+function fabricQuantityLabel(garment: Garment) {
+  if (!garment.fabricQuantity) return '';
+  return `${garment.fabricQuantity} ${garment.fabricUnit ?? 'm'}`;
+}
+
 export function GarmentsSummary({ garments, clientName }: { garments: Garment[]; clientName?: string }) {
   const filled = garments.filter((g) => g.description);
   if (!filled.length) return null;
@@ -22,6 +27,7 @@ export function GarmentsSummary({ garments, clientName }: { garments: Garment[];
               <div className="mt-1 flex flex-wrap gap-x-2 gap-y-1 text-xs">
                 <span>{g.wearerName || clientName || 'Client principal'}</span>
                 {g.fabricType && <span>({g.fabricType})</span>}
+                {fabricQuantityLabel(g) && <span>Tissu: {fabricQuantityLabel(g)}</span>}
                 {g.price ? <span className="font-medium text-foreground">{currency(g.price)}</span> : null}
               </div>
               {g.measurementsNote && <p className="mt-2 text-xs leading-5">{g.measurementsNote}</p>}

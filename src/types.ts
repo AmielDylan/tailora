@@ -12,6 +12,8 @@ export type Garment = {
   id: string;
   description: string;
   fabricType?: string;
+  fabricQuantity?: number;
+  fabricUnit?: 'm' | 'cm';
   quantity: number;
   wearerName?: string;
   measurementsNote?: string;
