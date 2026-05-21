@@ -14,7 +14,7 @@ export type Garment = {
   fabricType?: string;
   fabricQuantity?: number;
   fabricUnit?: 'm' | 'cm';
-  quantity: number;
+  quantity: string;
   wearerName?: string;
   measurementsNote?: string;
   measurements?: Measurement[];

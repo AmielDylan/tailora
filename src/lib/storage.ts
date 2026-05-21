@@ -14,6 +14,7 @@ function copyMeasurements(measurements?: Measurement[]): Measurement[] {
 function normalizeGarment(order: Partial<Order>, garment: Garment): Garment {
   return {
     ...garment,
+    quantity: String(garment.quantity || '1'),
     fabricUnit: garment.fabricUnit ?? 'm',
     measurements: garment.measurements?.length
       ? copyMeasurements(garment.measurements)
