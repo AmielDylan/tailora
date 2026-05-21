@@ -4,11 +4,13 @@ import { demoClients } from '@/constants';
 import { today, isLate, balance } from '@/helpers';
 import { loadState, saveState } from '@/lib/storage';
 
+export type OrderFilter = 'Tous' | Status | 'Actives' | 'En retard' | 'Soldes dus';
+
 export function useAppData() {
   const [clients, setClients] = useState<Client[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'Tous' | Status>('Tous');
+  const [statusFilter, setStatusFilter] = useState<OrderFilter>('Tous');
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [toast, setToast] = useState('');
   const initialized = useRef(false);
@@ -29,7 +31,13 @@ export function useAppData() {
   const filteredOrders = useMemo(() => {
     const term = search.trim().toLowerCase();
     return orders
-      .filter((o) => statusFilter === 'Tous' || o.status === statusFilter)
+      .filter((o) => {
+        if (statusFilter === 'Tous') return true;
+        if (statusFilter === 'Actives') return o.status === 'ReÃ§ue' || o.status === 'En cours';
+        if (statusFilter === 'En retard') return isLate(o);
+        if (statusFilter === 'Soldes dus') return balance(o) > 0 && o.status !== 'LivrÃ©e';
+        return o.status === statusFilter;
+      })
       .filter((o) => !term || `${o.clientName} ${o.clientPhone}`.toLowerCase().includes(term))
       .sort((a, b) => a.deliveryAt.localeCompare(b.deliveryAt));
   }, [orders, search, statusFilter]);

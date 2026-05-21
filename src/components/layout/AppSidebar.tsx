@@ -1,4 +1,4 @@
-import { LayoutDashboard, Lock, Package, Scissors, User, Users } from 'lucide-react';
+import { LayoutDashboard, Lock, LogOut, Package, Scissors, User, Users } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -19,7 +19,7 @@ const NAV_ITEMS: { label: string; route: Route; icon: React.ElementType }[] = [
   { label: 'Clients',         route: 'clients',   icon: Users    },
 ];
 
-export function AppSidebar({ onLock, pinEnabled }: { onLock: () => void; pinEnabled: boolean }) {
+export function AppSidebar({ onLock, onLogout, pinEnabled }: { onLock: () => void; onLogout: () => void; pinEnabled: boolean }) {
   const { current, navigate } = useNavigationContext();
   const { orders, clients } = useAppDataContext();
 
@@ -90,6 +90,12 @@ export function AppSidebar({ onLock, pinEnabled }: { onLock: () => void; pinEnab
               </SidebarMenuButton>
             </SidebarMenuItem>
           )}
+          <SidebarMenuItem>
+            <SidebarMenuButton onClick={onLogout} className="h-9 gap-3 rounded-lg px-3 text-muted-foreground hover:text-foreground">
+              <LogOut />
+              <span>Se deconnecter</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>

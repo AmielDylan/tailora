@@ -9,6 +9,13 @@ export function GarmentsEditor({ garments, onChange }: Props) {
     onChange(garments.map((g) => (g.id === id ? { ...g, [field]: value } : g)));
   }
 
+  function readPhoto(id: string, file?: File) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => update(id, 'photo', String(reader.result));
+    reader.readAsDataURL(file);
+  }
+
   function add() {
     onChange([...garments, { id: uid('g'), description: '', fabricType: '', quantity: 1 }]);
   }
@@ -47,6 +54,15 @@ export function GarmentsEditor({ garments, onChange }: Props) {
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
+            <div className="col-span-2 sm:col-span-1">
+              <label className="mb-1 block text-xs text-muted-foreground">Personne concernee</label>
+              <input
+                placeholder="Client principal, enfant, soeur..."
+                value={g.wearerName || ''}
+                onChange={(e) => update(g.id, 'wearerName', e.target.value)}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
             <div>
               <label className="mb-1 block text-xs text-muted-foreground">Type de tissu</label>
               <input
@@ -65,6 +81,43 @@ export function GarmentsEditor({ garments, onChange }: Props) {
                 onChange={(e) => update(g.id, 'quantity', Math.max(1, Number(e.target.value)))}
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
               />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-muted-foreground">Prix (FCFA)</label>
+              <input
+                type="number"
+                min="0"
+                value={g.price || ''}
+                onChange={(e) => update(g.id, 'price', Number(e.target.value))}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div className="col-span-2">
+              <label className="mb-1 block text-xs text-muted-foreground">Mensurations / details propres a ce vetement</label>
+              <textarea
+                rows={2}
+                placeholder="Longueur, manches, ajustements, mesures de la personne..."
+                value={g.measurementsNote || ''}
+                onChange={(e) => update(g.id, 'measurementsNote', e.target.value)}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div className="col-span-2">
+              <label className="mb-1 block text-xs text-muted-foreground">Photo associee</label>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <input
+                  value={g.photo || ''}
+                  onChange={(e) => update(g.id, 'photo', e.target.value)}
+                  placeholder="URL de photo"
+                  className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                />
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => readPhoto(g.id, e.target.files?.[0])}
+                  className="text-xs text-muted-foreground file:mr-3 file:rounded-md file:border-0 file:bg-secondary file:px-3 file:py-2 file:text-xs file:font-medium file:text-foreground"
+                />
+              </div>
             </div>
           </div>
         </div>

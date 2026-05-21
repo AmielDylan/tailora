@@ -19,6 +19,10 @@ export function balance(order: Pick<Order, 'totalPrice' | 'deposit'>) {
   return Math.max(0, Number(order.totalPrice || 0) - Number(order.deposit || 0));
 }
 
+export function garmentTotal(garments: Order['garments']) {
+  return garments.reduce((sum, garment) => sum + Number(garment.price || 0), 0);
+}
+
 export function uid(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }

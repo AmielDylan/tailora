@@ -95,10 +95,24 @@ export function PinScreen({ mode, onSuccess, onLockout }: Props) {
   const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'];
 
   return (
-    <div className="h-screen flex overflow-hidden">
+    <div className="relative h-screen overflow-hidden lg:flex">
+      <div className="absolute inset-0 lg:hidden">
+        {BG_IMAGES.map((src, i) => (
+          <img
+            key={src}
+            src={src}
+            alt=""
+            className={cn(
+              'absolute inset-0 h-full w-full object-cover transition-opacity duration-700',
+              i === imgIndex ? 'opacity-100' : 'opacity-0',
+            )}
+          />
+        ))}
+        <div className="absolute inset-0 bg-black/25" />
+      </div>
       {/* ── Panneau gauche ── */}
-      <div className="flex flex-1 flex-col items-center justify-center overflow-y-auto px-8 py-12 bg-background">
-        <div className="w-full max-w-xs space-y-8">
+      <div className="relative z-10 flex h-full flex-1 flex-col items-center justify-center overflow-y-auto px-4 py-8 sm:px-8 lg:bg-background lg:py-12">
+        <div className="w-full max-w-xs space-y-8 rounded-xl border border-white/40 bg-background/90 p-6 shadow-xl shadow-black/15 backdrop-blur-md supports-[backdrop-filter]:bg-background/90 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none lg:backdrop-blur-none">
           <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground">Tailora</h1>
 
           <div className="space-y-1">
