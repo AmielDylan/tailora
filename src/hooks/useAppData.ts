@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Client, Order, Status } from '@/types';
-import { demoClients } from '@/constants';
+import { demoClients, STATUSES } from '@/constants';
 import { today, isLate, balance } from '@/helpers';
 import { loadState, saveState } from '@/lib/storage';
 
@@ -33,9 +33,9 @@ export function useAppData() {
     return orders
       .filter((o) => {
         if (statusFilter === 'Tous') return true;
-        if (statusFilter === 'Actives') return o.status === 'ReÃ§ue' || o.status === 'En cours';
+        if (statusFilter === 'Actives') return o.status === STATUSES[0] || o.status === STATUSES[1];
         if (statusFilter === 'En retard') return isLate(o);
-        if (statusFilter === 'Soldes dus') return balance(o) > 0 && o.status !== 'LivrÃ©e';
+        if (statusFilter === 'Soldes dus') return balance(o) > 0 && o.status !== STATUSES[3];
         return o.status === statusFilter;
       })
       .filter((o) => !term || `${o.clientName} ${o.clientPhone}`.toLowerCase().includes(term))

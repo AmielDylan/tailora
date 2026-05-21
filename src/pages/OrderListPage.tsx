@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 import type { Order, Status } from '@/types';
 
 function daysLabel(order: Order): { text: string; late: boolean } {
-  if (order.status === 'TerminÃ©e' || order.status === 'LivrÃ©e') {
+  if (order.status === STATUSES[2] || order.status === STATUSES[3]) {
     return { text: `Livraison prÃ©vue le ${dateLabel(order.deliveryAt)}`, late: false };
   }
   const diff = Math.ceil((new Date(order.deliveryAt).getTime() - Date.now()) / 86400000);
@@ -35,7 +35,7 @@ export function OrderListPage() {
       counts[status] = data.orders.filter((order) => order.status === status).length;
     });
     counts['En retard'] = data.orders.filter((order) => isLate(order)).length;
-    counts['Soldes dus'] = data.orders.filter((order) => balance(order) > 0 && order.status !== 'LivrÃ©e').length;
+    counts['Soldes dus'] = data.orders.filter((order) => balance(order) > 0 && order.status !== STATUSES[3]).length;
     return counts;
   }, [data.orders]);
 
