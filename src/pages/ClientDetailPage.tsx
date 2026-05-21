@@ -4,10 +4,6 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { StatusBadge } from '@/components/StatusBadge';
 import { currency, balance, dateLabel } from '@/helpers';
 
-function toFlag(code: string) {
-  return code.toUpperCase().replace(/./g, (c) => String.fromCodePoint(c.charCodeAt(0) + 127397));
-}
-
 export function ClientDetailPage({ clientId }: { clientId: string }) {
   const { clients, orders } = useAppDataContext();
   const nav = useNavigationContext();
@@ -36,15 +32,12 @@ export function ClientDetailPage({ clientId }: { clientId: string }) {
       <div className="mx-auto max-w-xl space-y-5 px-4 py-6">
 
         {/* Header info */}
-        <div className="rounded-xl border border-border bg-card p-4 space-y-2">
-          <div className="flex items-center gap-2">
-            {client.country && <span className="text-2xl">{toFlag(client.country)}</span>}
-            <div>
-              <p className="font-semibold text-foreground">{client.name}</p>
-              <p className="text-sm text-muted-foreground">{client.phone}</p>
-            </div>
+        <div className="space-y-3 rounded-xl border border-border bg-card p-4">
+          <div className="space-y-1">
+            <p className="text-lg font-semibold text-foreground">{client.name}</p>
+            <p className="text-sm font-medium text-muted-foreground">{client.phone}</p>
           </div>
-          {client.address && <p className="text-xs text-muted-foreground">{client.address}</p>}
+          {client.address && <p className="text-sm text-muted-foreground">{client.address}</p>}
           {client.notes && <p className="text-sm italic text-muted-foreground border-t border-border pt-2">{client.notes}</p>}
         </div>
 
@@ -69,9 +62,17 @@ export function ClientDetailPage({ clientId }: { clientId: string }) {
 
         {/* Order history */}
         <div className="space-y-3">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Historique ({clientOrders.length} commande{clientOrders.length !== 1 ? 's' : ''})
-          </h3>
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Historique ({clientOrders.length} commande{clientOrders.length !== 1 ? 's' : ''})
+            </h3>
+            <button
+              onClick={() => nav.push('orders/new')}
+              className="shrink-0 rounded-full bg-foreground px-4 py-2 text-xs font-medium text-background transition-opacity hover:opacity-80"
+            >
+              Nouvelle commande
+            </button>
+          </div>
           {clientOrders.length === 0 ? (
             <div className="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-border px-6 py-8 text-center">
               <p className="text-sm text-muted-foreground">Aucune commande pour ce client.</p>
@@ -98,13 +99,6 @@ export function ClientDetailPage({ clientId }: { clientId: string }) {
           )}
         </div>
 
-        {/* Quick action */}
-        <button
-          onClick={() => nav.push('orders/new')}
-          className="w-full rounded-full bg-foreground py-2.5 text-sm font-medium text-background transition-opacity hover:opacity-80"
-        >
-          Nouvelle commande pour {client.name}
-        </button>
       </div>
     </>
   );
