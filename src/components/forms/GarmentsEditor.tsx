@@ -52,7 +52,7 @@ export function GarmentsEditor({ garments, baseMeasurements, onChange }: Props) 
         description: '',
         fabricType: '',
         fabricUnit: 'm',
-        quantity: 1,
+        quantity: '1',
         measurements: copyMeasurements(baseMeasurements),
         fabricPhoto: '',
         modelPhoto: '',
@@ -135,10 +135,9 @@ export function GarmentsEditor({ garments, baseMeasurements, onChange }: Props) 
             <label className="flex flex-col gap-1.5">
               <span className="text-sm font-medium text-foreground">Nombre de pièces</span>
               <Input
-                type="number"
-                min="1"
                 value={g.quantity}
-                onChange={(e) => update(g.id, 'quantity', Math.max(1, Number(e.target.value)))}
+                onChange={(e) => update(g.id, 'quantity', e.target.value)}
+                placeholder="Ex. 1, 2, robe + foulard"
               />
             </label>
             <label className="flex flex-col gap-1.5">

@@ -5,12 +5,12 @@ import { uid } from '../helpers';
 type Props = { garments: Garment[]; onChange: (g: Garment[]) => void };
 
 export function GarmentsEditor({ garments, onChange }: Props) {
-  function update(id: string, field: keyof Garment, value: string | number) {
+  function update<K extends keyof Garment>(id: string, field: K, value: Garment[K]) {
     onChange(garments.map((g) => g.id === id ? { ...g, [field]: value } : g));
   }
 
   function add() {
-    onChange([...garments, { id: uid('g'), description: '', fabricType: '', quantity: 1 }]);
+    onChange([...garments, { id: uid('g'), description: '', fabricType: '', quantity: '1' }]);
   }
 
   function remove(id: string) {
@@ -50,12 +50,11 @@ export function GarmentsEditor({ garments, onChange }: Props) {
                 />
               </label>
             </div>
-            <label style={{ maxWidth: 120 }}>Quantité
+            <label style={{ maxWidth: 180 }}>Nombre de pièces
               <input
-                type="number"
-                min="1"
+                placeholder="Ex. 1, 2, robe + foulard"
                 value={g.quantity}
-                onChange={(e) => update(g.id, 'quantity', Math.max(1, Number(e.target.value)))}
+                onChange={(e) => update(g.id, 'quantity', e.target.value)}
               />
             </label>
           </div>
