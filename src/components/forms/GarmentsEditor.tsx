@@ -41,7 +41,19 @@ export function GarmentsEditor({ garments, baseMeasurements, onChange }: Props) 
   }
 
   function removeModelPhoto(id: string) {
-    onChange(garments.map((g) => (g.id === id ? { ...g, modelPhoto: '', photo: '' } : g)));
+    onChange(garments.map((g) => (g.id === id ? { ...g, modelPhoto: '', photo: '', modelLinks: [] } : g)));
+  }
+
+  function removeFabricPhoto(id: string) {
+    onChange(garments.map((g) => (g.id === id ? { ...g, fabricPhoto: '', fabricLinks: [] } : g)));
+  }
+
+  function addLink(id: string, key: 'fabricLinks' | 'modelLinks', url: string) {
+    onChange(garments.map((g) => (g.id === id ? { ...g, [key]: [...(g[key] ?? []), url] } : g)));
+  }
+
+  function removeLink(id: string, key: 'fabricLinks' | 'modelLinks', index: number) {
+    onChange(garments.map((g) => (g.id === id ? { ...g, [key]: (g[key] ?? []).filter((_, i) => i !== index) } : g)));
   }
 
   function add() {
@@ -172,15 +184,19 @@ export function GarmentsEditor({ garments, baseMeasurements, onChange }: Props) 
             <PhotoInput
               label="Photo du tissu"
               image={g.fabricPhoto}
+              links={g.fabricLinks ?? []}
               onFile={(e) => readPhoto(g.id, 'fabricPhoto', e.target.files?.[0])}
-              onUrl={(url) => update(g.id, 'fabricPhoto', url)}
-              onRemove={() => update(g.id, 'fabricPhoto', '')}
+              onAddLink={(url) => addLink(g.id, 'fabricLinks', url)}
+              onRemoveLink={(i) => removeLink(g.id, 'fabricLinks', i)}
+              onRemove={() => removeFabricPhoto(g.id)}
             />
             <PhotoInput
               label="Photo du modèle"
               image={g.modelPhoto || g.photo}
+              links={g.modelLinks ?? []}
               onFile={(e) => readPhoto(g.id, 'modelPhoto', e.target.files?.[0])}
-              onUrl={(url) => update(g.id, 'modelPhoto', url)}
+              onAddLink={(url) => addLink(g.id, 'modelLinks', url)}
+              onRemoveLink={(i) => removeLink(g.id, 'modelLinks', i)}
               onRemove={() => removeModelPhoto(g.id)}
             />
           </div>
