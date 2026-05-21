@@ -14,7 +14,7 @@ export function BentoCard({ children, className, onClick }: Props) {
       onClick={onClick}
       onKeyDown={onClick ? (e) => e.key === 'Enter' && onClick() : undefined}
       className={cn(
-        'rounded-xl border border-border bg-card p-5 shadow-sm',
+        'rounded-lg border border-border/70 bg-card p-5 shadow-sm',
         onClick && 'cursor-pointer select-none',
         className,
       )}

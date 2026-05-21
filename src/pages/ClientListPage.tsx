@@ -17,6 +17,8 @@ import {
   DialogFooter,
   DialogDescription,
 } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useAppDataContext } from '@/context/AppDataContext';
 import { useNavigationContext } from '@/context/NavigationContext';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -61,12 +63,12 @@ export function ClientListPage() {
             className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground"
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
           >
-            Nom <ArrowUpDown className="h-3 w-3" />
+            Nom <ArrowUpDown className="size-3" />
           </button>
         ),
         cell: ({ row }) => (
           <button
-            className="font-medium text-foreground hover:underline text-left"
+            className="text-left font-medium text-foreground transition-colors hover:text-primary"
             onClick={() => nav.push(`clients/${row.original.id}`)}
           >
             {row.original.name}
@@ -93,7 +95,7 @@ export function ClientListPage() {
             className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground"
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
           >
-            Cmds <ArrowUpDown className="h-3 w-3" />
+            Cmds <ArrowUpDown className="size-3" />
           </button>
         ),
         cell: ({ getValue }) => <span className="text-sm tabular-nums">{getValue<number>()}</span>,
@@ -104,10 +106,10 @@ export function ClientListPage() {
         cell: ({ row }) => (
           <button
             onClick={() => setDeleteTarget(row.original)}
-            className="text-muted-foreground transition-colors hover:text-destructive"
+            className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
             aria-label="Supprimer"
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 />
           </button>
         ),
         enableSorting: false,
@@ -131,21 +133,22 @@ export function ClientListPage() {
 
   return (
     <>
-      <PageHeader title="Clients" />
-      <div className="p-4 space-y-4">
+      <PageHeader title="Clients" subtitle={`${clients.length} fiche${clients.length > 1 ? 's' : ''} client`} />
+      <div className="flex flex-col gap-4 p-4 lg:p-6">
         {clients.length === 0 ? (
           <EmptyState
             icon={Users}
             title="Aucun client"
             subtitle="Les clients sont créés automatiquement à la première commande."
+            className="bg-card"
           />
         ) : (
           <>
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                className="w-full rounded-lg border border-border bg-background pl-9 pr-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                className="h-10 bg-card pl-9"
                 placeholder="Rechercher par nom ou téléphone"
                 value={globalFilter}
                 onChange={(e) => setGlobalFilter(e.target.value)}
@@ -153,9 +156,9 @@ export function ClientListPage() {
             </div>
 
             {/* Table */}
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
+            <div className="overflow-hidden rounded-lg border border-border/70 bg-card">
               <table className="w-full text-sm">
-                <thead className="border-b border-border bg-muted/40">
+                <thead className="border-b border-border bg-muted/60">
                   {table.getHeaderGroups().map((hg) => (
                     <tr key={hg.id}>
                       {hg.headers.map((header) => (
@@ -175,7 +178,7 @@ export function ClientListPage() {
                     </tr>
                   ) : (
                     table.getRowModel().rows.map((row) => (
-                      <tr key={row.id} className="transition-colors hover:bg-muted/30">
+                      <tr key={row.id} className="transition-colors hover:bg-muted/40">
                         {row.getVisibleCells().map((cell) => (
                           <td key={cell.id} className="px-3 py-3">
                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -203,23 +206,25 @@ export function ClientListPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex gap-2">
-            <button
+            <Button
+              variant="outline"
               onClick={() => setDeleteTarget(null)}
-              className="flex-1 rounded-full border border-border py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+              className="flex-1"
             >
               Annuler
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="destructive"
               onClick={() => {
                 if (deleteTarget) {
                   deleteClientCascade(deleteTarget.id);
                   setDeleteTarget(null);
                 }
               }}
-              className="flex-1 rounded-full bg-destructive py-2 text-sm font-medium text-white transition-opacity hover:opacity-80"
+              className="flex-1"
             >
               Supprimer
-            </button>
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

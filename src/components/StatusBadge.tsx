@@ -1,16 +1,18 @@
 import type { Status } from '@/types';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 const STATUS_CLASS: Record<Status, string> = {
-  'Reçue':    'bg-amber-100 text-amber-700',
-  'En cours': 'bg-blue-100 text-blue-700',
-  'Terminée': 'bg-emerald-100 text-emerald-700',
-  'Livrée':   'bg-zinc-100 text-zinc-500',
+  'Reçue':    'border-amber-600/10 bg-amber-600/[0.08] text-amber-700',
+  'En cours': 'border-blue-700/10 bg-blue-700/[0.08] text-blue-700',
+  'Terminée': 'border-emerald-700/10 bg-emerald-700/[0.08] text-emerald-700',
+  'Livrée':   'border-zinc-700/10 bg-zinc-700/[0.06] text-zinc-600',
 };
 
 export function StatusBadge({ status }: { status: Status }) {
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_CLASS[status]}`}>
+    <Badge variant="outline" className={cn('h-4 rounded-md px-1.5 text-[0.65rem] font-medium leading-none', STATUS_CLASS[status])}>
       {status}
-    </span>
+    </Badge>
   );
 }

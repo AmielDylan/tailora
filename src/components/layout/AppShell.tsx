@@ -8,9 +8,9 @@ export function AppShell({ onLock, pinEnabled }: { onLock: () => void; pinEnable
   const { toast, setToast } = useAppDataContext();
 
   return (
-    <SidebarProvider>
+    <SidebarProvider className="bg-background">
       <AppSidebar onLock={onLock} pinEnabled={pinEnabled} />
-      <SidebarInset>
+      <SidebarInset className="min-w-0">
         <PageRouter onLock={onLock} />
       </SidebarInset>
       <Toast message={toast} onDone={() => setToast('')} />
