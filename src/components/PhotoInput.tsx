@@ -1,6 +1,10 @@
 import { type ChangeEvent, useRef, useState } from 'react';
-import { Camera, FolderOpen, ImageIcon, X } from 'lucide-react';
+import { Camera, ExternalLink, FolderOpen, ImageIcon, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+function isDataUrl(s: string) {
+  return s.startsWith('data:');
+}
 
 type Props = {
   label: string;
@@ -60,7 +64,18 @@ export function PhotoInput({ label, required, image, onFile, onUrl, onRemove }: 
       </span>
 
       <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-border bg-secondary">
-        {image ? (
+        {image && !isDataUrl(image) && urlError ? (
+          <a
+            href={image}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex h-full flex-col items-center justify-center gap-2 p-4 text-center"
+          >
+            <ExternalLink className="h-6 w-6 text-muted-foreground" strokeWidth={1.25} />
+            <span className="line-clamp-2 break-all text-xs text-muted-foreground">{image}</span>
+            <span className="text-xs font-medium text-foreground underline underline-offset-2">Ouvrir le lien</span>
+          </a>
+        ) : image ? (
           <img
             src={image}
             alt={label}
@@ -122,15 +137,9 @@ export function PhotoInput({ label, required, image, onFile, onUrl, onRemove }: 
             onChange={(e) => handleUrl(e.target.value)}
             className="w-full rounded-lg border border-border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
           />
-          {urlError ? (
-            <p className="text-xs text-destructive">
-              Lien inaccessible. Pinterest, Instagram et Facebook ne donnent pas de liens directs vers les images — enregistre la photo sur ton téléphone puis utilise "Importer".
-            </p>
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              Lien direct vers une image uniquement (.jpg, .png…). Les liens Pinterest ou Instagram ne fonctionnent pas.
-            </p>
-          )}
+          <p className="text-xs text-muted-foreground">
+            Les liens Pinterest, Instagram… s'affichent comme lien cliquable (pas d'aperçu image).
+          </p>
         </div>
       )}
 
