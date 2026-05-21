@@ -29,7 +29,7 @@ export function PageHeader({ title, subtitle, right, className }: Props) {
           size="sm"
           onClick={pop}
           aria-label="Retour"
-          className="shrink-0 text-muted-foreground"
+          className="shrink-0 text-sm text-muted-foreground"
         >
           <ChevronLeft data-icon="inline-start" />
           Retour
@@ -37,7 +37,7 @@ export function PageHeader({ title, subtitle, right, className }: Props) {
       )}
 
       <div className="min-w-0 flex-1">
-        <h1 className="truncate font-heading text-lg font-medium tracking-normal text-foreground">
+        <h1 className="truncate font-heading text-sm font-medium tracking-normal text-foreground">
           {title}
         </h1>
         {subtitle && <p className="truncate text-xs text-muted-foreground">{subtitle}</p>}

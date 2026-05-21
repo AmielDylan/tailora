@@ -12,10 +12,13 @@ import { GarmentsSummary } from '@/components/GarmentsSummary';
 import { MeasurementsSummary } from '@/components/MeasurementsSummary';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { cn } from '@/lib/utils';
-import type { Status } from '@/types';
+import type { Order, Status } from '@/types';
 
-function daysLabel(deliveryAt: string): { text: string; late: boolean } {
-  const diff = Math.ceil((new Date(deliveryAt).getTime() - Date.now()) / 86400000);
+function daysLabel(order: Order): { text: string; late: boolean } {
+  if (order.status === 'TerminÃ©e' || order.status === 'LivrÃ©e') {
+    return { text: `Livraison prÃ©vue le ${dateLabel(order.deliveryAt)}`, late: false };
+  }
+  const diff = Math.ceil((new Date(order.deliveryAt).getTime() - Date.now()) / 86400000);
   if (diff < 0) return { text: `${Math.abs(diff)}j de retard`, late: true };
   if (diff === 0) return { text: 'Livraison aujourd\'hui', late: false };
   return { text: `dans ${diff}j`, late: false };
@@ -31,6 +34,8 @@ export function OrderListPage() {
     STATUSES.forEach((status) => {
       counts[status] = data.orders.filter((order) => order.status === status).length;
     });
+    counts['En retard'] = data.orders.filter((order) => isLate(order)).length;
+    counts['Soldes dus'] = data.orders.filter((order) => balance(order) > 0 && order.status !== 'LivrÃ©e').length;
     return counts;
   }, [data.orders]);
 
@@ -46,7 +51,7 @@ export function OrderListPage() {
         right={
           <Button onClick={() => nav.push('orders/new')} size="lg">
             <Plus data-icon="inline-start" />
-            Nouvelle
+            Nouvelle commande
           </Button>
         }
       />
@@ -64,7 +69,7 @@ export function OrderListPage() {
           </div>
 
           <div className="flex gap-2 overflow-x-auto pb-1">
-            {(['Tous', ...STATUSES] as const).map((status) => (
+            {(['Tous', ...STATUSES, 'En retard', 'Soldes dus'] as const).map((status) => (
               <button
                 key={status}
                 onClick={() => data.setStatusFilter(status)}
@@ -95,7 +100,7 @@ export function OrderListPage() {
                 const expanded = expandedId === order.id;
                 const late = isLate(order);
                 const bal = balance(order);
-                const days = daysLabel(order.deliveryAt);
+                const days = daysLabel(order);
 
                 return (
                   <article key={order.id} className={cn(late && 'bg-destructive/[0.035]')}>
@@ -107,12 +112,11 @@ export function OrderListPage() {
                       <div className="min-w-0 flex-1">
                         <div className="flex min-w-0 items-center gap-2">
                           <span className="truncate font-medium text-foreground">{order.clientName}</span>
-                          <StatusBadge status={order.status} />
+                          <span className="ml-auto shrink-0"><StatusBadge status={order.status} /></span>
                         </div>
                         <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
                           <span className={cn(days.late && 'font-medium text-destructive')}>{days.text}</span>
-                          <span>{dateLabel(order.deliveryAt)}</span>
-                          {bal > 0 && <span className="font-medium text-foreground">Reste {currency(bal)}</span>}
+                          {bal > 0 && <span className="font-medium text-foreground">Solde restant : {currency(bal)}</span>}
                         </div>
                       </div>
                       {expanded
@@ -124,7 +128,7 @@ export function OrderListPage() {
                     {expanded && (
                       <div className="flex flex-col gap-4 border-t border-border px-4 pb-4 pt-3 sm:pl-[4.25rem]">
                         <div className="grid gap-4 md:grid-cols-2">
-                          <GarmentsSummary garments={order.garments || []} />
+                          <GarmentsSummary garments={order.garments || []} clientName={order.clientName} />
                           <MeasurementsSummary measurements={order.measurements || []} />
                         </div>
 

@@ -120,7 +120,7 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
           {(order.garments || []).length > 0 && (
             <section className="rounded-lg border border-border/70 bg-card p-4">
               <h2 className="mb-3 text-sm font-medium text-foreground">Vêtements</h2>
-              <GarmentsSummary garments={order.garments || []} />
+              <GarmentsSummary garments={order.garments || []} clientName={order.clientName} />
             </section>
           )}
 

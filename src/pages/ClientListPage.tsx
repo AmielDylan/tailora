@@ -25,11 +25,11 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { EmptyState } from '@/components/shared/EmptyState';
 import type { Client } from '@/types';
 
-function toFlag(code: string) {
-  return code.toUpperCase().replace(/./g, (c) => String.fromCodePoint(c.charCodeAt(0) + 127397));
-}
-
 type Row = Client & { orderCount: number };
+
+function toFlag(_code?: string) {
+  return '';
+}
 
 export function ClientListPage() {
   const { clients, orders, deleteClientCascade } = useAppDataContext();
@@ -48,11 +48,8 @@ export function ClientListPage() {
       {
         id: 'flag',
         header: '',
-        accessorFn: (row) => row.country ?? '',
-        cell: ({ getValue }) => {
-          const code = getValue<string>();
-          return <span className="text-base">{code ? toFlag(code) : '🌍'}</span>;
-        },
+        accessorFn: () => 'hidden',
+        cell: () => null,
         enableSorting: false,
         size: 40,
       },
@@ -83,9 +80,9 @@ export function ClientListPage() {
       },
       {
         id: 'country',
-        accessorFn: (row) => row.country ?? '',
-        header: () => <span className="text-xs font-semibold text-muted-foreground">Pays</span>,
-        cell: ({ getValue }) => <span className="text-sm text-muted-foreground">{getValue<string>() || '—'}</span>,
+        accessorFn: () => '',
+        header: '',
+        cell: () => null,
         enableSorting: false,
       },
       {
@@ -162,7 +159,7 @@ export function ClientListPage() {
                   {table.getHeaderGroups().map((hg) => (
                     <tr key={hg.id}>
                       {hg.headers.map((header) => (
-                        <th key={header.id} className="px-3 py-2.5 text-left">
+                        <th key={header.id} className={header.id === 'flag' || header.id === 'country' ? 'hidden' : 'px-3 py-2.5 text-left'}>
                           {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                         </th>
                       ))}
@@ -180,7 +177,7 @@ export function ClientListPage() {
                     table.getRowModel().rows.map((row) => (
                       <tr key={row.id} className="transition-colors hover:bg-muted/40">
                         {row.getVisibleCells().map((cell) => (
-                          <td key={cell.id} className="px-3 py-3">
+                          <td key={cell.id} className={cell.column.id === 'flag' || cell.column.id === 'country' ? 'hidden' : 'px-3 py-3'}>
                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                           </td>
                         ))}

@@ -13,6 +13,10 @@ export type Garment = {
   description: string;
   fabricType?: string;
   quantity: number;
+  wearerName?: string;
+  measurementsNote?: string;
+  photo?: string;
+  price?: number;
 };
 
 export type Client = {

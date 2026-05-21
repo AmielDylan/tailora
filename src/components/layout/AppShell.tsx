@@ -4,12 +4,12 @@ import { PageRouter } from '@/components/layout/PageRouter';
 import { Toast } from '@/components/Toast';
 import { useAppDataContext } from '@/context/AppDataContext';
 
-export function AppShell({ onLock, pinEnabled }: { onLock: () => void; pinEnabled: boolean }) {
+export function AppShell({ onLock, onLogout, pinEnabled }: { onLock: () => void; onLogout: () => void; pinEnabled: boolean }) {
   const { toast, setToast } = useAppDataContext();
 
   return (
     <SidebarProvider className="bg-background">
-      <AppSidebar onLock={onLock} pinEnabled={pinEnabled} />
+      <AppSidebar onLock={onLock} onLogout={onLogout} pinEnabled={pinEnabled} />
       <SidebarInset className="min-w-0">
         <PageRouter onLock={onLock} />
       </SidebarInset>

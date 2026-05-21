@@ -11,6 +11,13 @@ export function App() {
   const [locked, setLocked] = useState(false);
   const credentialsExist = Boolean(localStorage.getItem(CREDENTIALS_KEY));
 
+  function logout() {
+    localStorage.removeItem(AUTH_KEY);
+    localStorage.removeItem(LAST_ACTIVE_KEY);
+    setLocked(false);
+    setAuthenticated(false);
+  }
+
   // ── Surveillance d'inactivité ──────────────────────────────────
   const resetActivity = useCallback(() => {
     localStorage.setItem(LAST_ACTIVE_KEY, String(Date.now()));
@@ -65,6 +72,7 @@ export function App() {
       <NavigationProvider>
         <AppShell
           onLock={() => setLocked(true)}
+          onLogout={logout}
           pinEnabled={localStorage.getItem(PIN_ENABLED_KEY) === 'true'}
         />
       </NavigationProvider>

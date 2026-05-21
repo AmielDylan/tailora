@@ -18,7 +18,7 @@ function toFlag(code: string) {
   return code.toUpperCase().replace(/./g, (c) => String.fromCodePoint(c.charCodeAt(0) + 127397));
 }
 import { STATUSES, makeEmptyForm, defaultMeasurements } from '@/constants';
-import { balance, currency, uid } from '@/helpers';
+import { balance, currency, garmentTotal, uid } from '@/helpers';
 import { useAppDataContext } from '@/context/AppDataContext';
 import { PhotoInput } from '@/components/PhotoInput';
 import { MeasurementsEditor } from '@/components/forms/MeasurementsEditor';
@@ -75,10 +75,9 @@ export function OrderForm({ orderId, onSave, onCancel }: Props) {
         clientName: client.name,
         clientPhone: client.phone,
         clientAddress: client.address || '',
-        clientCountry: client.country || 'BJ',
       }));
     } else {
-      setForm((cur) => ({ ...cur, clientId: '', clientName: '', clientPhone: '', clientAddress: '', clientCountry: 'BJ' }));
+      setForm((cur) => ({ ...cur, clientId: '', clientName: '', clientPhone: '', clientAddress: '' }));
     }
   }
 
@@ -122,11 +121,13 @@ export function OrderForm({ orderId, onSave, onCancel }: Props) {
 
     if (existingClient) {
       clientId = existingClient.id;
-      upsertClient({ ...existingClient, name: normalizedName, phone: normalizedPhone, address: form.clientAddress || existingClient.address, country: form.clientCountry || existingClient.country });
+      upsertClient({ ...existingClient, name: normalizedName, phone: normalizedPhone, address: form.clientAddress || existingClient.address, country: undefined });
     } else {
       clientId = uid('client');
-      upsertClient({ id: clientId, name: normalizedName, phone: normalizedPhone, address: form.clientAddress, country: form.clientCountry });
+      upsertClient({ id: clientId, name: normalizedName, phone: normalizedPhone, address: form.clientAddress });
     }
+
+    const computedTotal = garmentTotal(garmentsFilled);
 
     const payload: Order = {
       ...form,
@@ -135,7 +136,8 @@ export function OrderForm({ orderId, onSave, onCancel }: Props) {
       clientName: normalizedName,
       clientPhone: normalizedPhone,
       clientAddress: form.clientAddress.trim(),
-      totalPrice: Number(form.totalPrice || 0),
+      clientCountry: undefined,
+      totalPrice: computedTotal > 0 ? computedTotal : Number(form.totalPrice || 0),
       deposit: Number(form.deposit || 0),
       garments: garmentsFilled,
       createdAt: orderId
@@ -148,7 +150,9 @@ export function OrderForm({ orderId, onSave, onCancel }: Props) {
     onSave?.(clientId);
   }
 
-  const bal = balance(form);
+  const subTotal = garmentTotal(form.garments);
+  const effectiveTotal = subTotal > 0 ? subTotal : form.totalPrice;
+  const bal = balance({ totalPrice: effectiveTotal, deposit: form.deposit });
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
@@ -193,7 +197,7 @@ export function OrderForm({ orderId, onSave, onCancel }: Props) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="space-y-1.5">
         <div className="space-y-1.5">
           <label className="block text-sm font-medium text-foreground">Adresse</label>
           <input
@@ -202,20 +206,6 @@ export function OrderForm({ orderId, onSave, onCancel }: Props) {
             placeholder="Quartier, ville"
             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
           />
-        </div>
-        <div className="space-y-1.5">
-          <label className="block text-sm font-medium text-foreground">Pays</label>
-          <select
-            value={form.clientCountry || 'BJ'}
-            onChange={(e) => updateForm('clientCountry', e.target.value)}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-          >
-            {COUNTRIES.map(({ code, label }) => (
-              <option key={code} value={code}>
-                {toFlag(code)} {label}
-              </option>
-            ))}
-          </select>
         </div>
       </div>
 
@@ -311,8 +301,9 @@ export function OrderForm({ orderId, onSave, onCancel }: Props) {
           <input
             type="number"
             min="0"
-            value={form.totalPrice}
+            value={effectiveTotal}
             onChange={(e) => updateForm('totalPrice', Number(e.target.value))}
+            disabled={subTotal > 0}
             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
