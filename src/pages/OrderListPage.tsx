@@ -1,13 +1,17 @@
-import { useState } from 'react';
-import { Plus, ChevronDown, ChevronUp } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { ChevronDown, ChevronUp, Plus, Search } from 'lucide-react';
 import { STATUSES } from '@/constants';
 import { balance, currency, dateLabel, isLate } from '@/helpers';
 import { useAppDataContext } from '@/context/AppDataContext';
 import { useNavigationContext } from '@/context/NavigationContext';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { StatusBadge } from '@/components/StatusBadge';
 import { GarmentsSummary } from '@/components/GarmentsSummary';
 import { MeasurementsSummary } from '@/components/MeasurementsSummary';
+import { EmptyState } from '@/components/shared/EmptyState';
+import { cn } from '@/lib/utils';
 import type { Status } from '@/types';
 
 function daysLabel(deliveryAt: string): { text: string; late: boolean } {
@@ -22,150 +26,165 @@ export function OrderListPage() {
   const nav = useNavigationContext();
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
+  const filterCounts = useMemo(() => {
+    const counts: Record<string, number> = { Tous: data.orders.length };
+    STATUSES.forEach((status) => {
+      counts[status] = data.orders.filter((order) => order.status === status).length;
+    });
+    return counts;
+  }, [data.orders]);
+
   function toggle(id: string) {
     setExpandedId((cur) => (cur === id ? null : id));
   }
 
   return (
     <>
-      <PageHeader title="Commandes" />
-      <div className="space-y-4 p-4 pb-24">
-        {/* Search */}
-        <input
-          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-          placeholder="Rechercher par nom ou téléphone"
-          value={data.search}
-          onChange={(e) => data.setSearch(e.target.value)}
-        />
+      <PageHeader
+        title="Commandes"
+        subtitle={`${data.filteredOrders.length} affichée${data.filteredOrders.length > 1 ? 's' : ''}`}
+        right={
+          <Button onClick={() => nav.push('orders/new')} size="lg">
+            <Plus data-icon="inline-start" />
+            Nouvelle
+          </Button>
+        }
+      />
 
-        {/* Status filters */}
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {(['Tous', ...STATUSES] as const).map((s) => (
-            <button
-              key={s}
-              onClick={() => data.setStatusFilter(s)}
-              className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                data.statusFilter === s
-                  ? 'bg-foreground text-background'
-                  : 'border border-border text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-
-        {/* Empty state */}
-        {data.filteredOrders.length === 0 && (
-          <div className="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-border px-6 py-10 text-center">
-            <p className="text-sm text-muted-foreground">Aucune commande trouvée.</p>
+      <div className="flex flex-col gap-4 p-4 pb-24 lg:p-6">
+        <section className="flex flex-col gap-3 rounded-lg border border-border/70 bg-card p-3">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              className="h-10 bg-background pl-9"
+              placeholder="Rechercher par nom ou téléphone"
+              value={data.search}
+              onChange={(e) => data.setSearch(e.target.value)}
+            />
           </div>
-        )}
 
-        {/* Order cards */}
-        <div className="space-y-3">
-          {data.filteredOrders.map((order) => {
-            const expanded = expandedId === order.id;
-            const late = isLate(order);
-            const bal = balance(order);
-            const days = daysLabel(order.deliveryAt);
-
-            return (
-              <article
-                key={order.id}
-                className={`rounded-xl border bg-card ${late ? 'border-destructive/40' : 'border-border'}`}
-              >
-                {/* Collapsed header — always visible */}
-                <button
-                  className="flex w-full items-center gap-3 p-4 text-left"
-                  onClick={() => toggle(order.id)}
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="truncate font-medium text-foreground">{order.clientName}</span>
-                      <StatusBadge status={order.status} />
-                    </div>
-                    <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                      <span className={days.late ? 'text-destructive font-medium' : ''}>{days.text}</span>
-                      <span>·</span>
-                      <span>{dateLabel(order.deliveryAt)}</span>
-                      {bal > 0 && (
-                        <>
-                          <span>·</span>
-                          <span className="text-foreground font-medium">{currency(bal)}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  {expanded
-                    ? <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    : <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  }
-                </button>
-
-                {/* Expanded content */}
-                {expanded && (
-                  <div className="border-t border-border px-4 pb-4 pt-3 space-y-3">
-                    <GarmentsSummary garments={order.garments || []} />
-                    <MeasurementsSummary measurements={order.measurements || []} />
-
-                    {order.notes && (
-                      <p className="text-xs text-muted-foreground italic">{order.notes}</p>
-                    )}
-
-                    <dl className="grid grid-cols-3 gap-2 text-xs">
-                      <div><dt className="text-muted-foreground">Réception</dt><dd className="font-medium">{dateLabel(order.fabricReceivedAt)}</dd></div>
-                      <div><dt className="text-muted-foreground">Prix</dt><dd className="font-medium">{currency(order.totalPrice)}</dd></div>
-                      <div><dt className="text-muted-foreground">Reste</dt><dd className="font-medium">{currency(bal)}</dd></div>
-                    </dl>
-
-                    {/* Quick-status */}
-                    <div className="flex gap-1.5 overflow-x-auto">
-                      {STATUSES.map((s) => (
-                        <button
-                          key={s}
-                          onClick={() => data.changeStatus(order.id, s as Status)}
-                          className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                            order.status === s
-                              ? 'bg-foreground text-background'
-                              : 'border border-border text-muted-foreground hover:text-foreground'
-                          }`}
-                        >
-                          {s}
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => nav.push(`orders/${order.id}/edit`)}
-                        className="flex-1 rounded-full border border-border py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
-                      >
-                        Modifier
-                      </button>
-                      <button
-                        onClick={() => data.deleteOrder(order.id)}
-                        className="flex-1 rounded-full border border-destructive/40 py-1.5 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10"
-                      >
-                        Supprimer
-                      </button>
-                    </div>
-                  </div>
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {(['Tous', ...STATUSES] as const).map((status) => (
+              <button
+                key={status}
+                onClick={() => data.setStatusFilter(status)}
+                className={cn(
+                  'inline-flex h-7 shrink-0 items-center gap-2 rounded-md border px-2.5 text-xs font-medium transition-colors',
+                  data.statusFilter === status
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-border/70 bg-background text-muted-foreground hover:text-foreground',
                 )}
-              </article>
-            );
-          })}
-        </div>
-      </div>
+              >
+                <span>{status}</span>
+                <span className="tabular-nums opacity-70">{filterCounts[status]}</span>
+              </button>
+            ))}
+          </div>
+        </section>
 
-      {/* FAB */}
-      <button
-        onClick={() => nav.push('orders/new')}
-        className="fixed bottom-6 right-6 z-10 flex h-14 w-14 items-center justify-center rounded-full bg-foreground text-background shadow-lg transition-opacity hover:opacity-80"
-        aria-label="Nouvelle commande"
-      >
-        <Plus className="h-6 w-6" />
-      </button>
+        {data.filteredOrders.length === 0 ? (
+          <EmptyState
+            title="Aucune commande trouvée"
+            subtitle="Modifiez la recherche ou le filtre pour retrouver une commande."
+            className="bg-card"
+          />
+        ) : (
+          <section className="overflow-hidden rounded-lg border border-border/70 bg-card">
+            <div className="divide-y divide-border">
+              {data.filteredOrders.map((order) => {
+                const expanded = expandedId === order.id;
+                const late = isLate(order);
+                const bal = balance(order);
+                const days = daysLabel(order.deliveryAt);
+
+                return (
+                  <article key={order.id} className={cn(late && 'bg-destructive/[0.035]')}>
+                    <button
+                      className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-muted/50"
+                      onClick={() => toggle(order.id)}
+                    >
+                      <div className={cn('h-12 w-px shrink-0 rounded-full bg-muted', late && 'bg-destructive')} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className="truncate font-medium text-foreground">{order.clientName}</span>
+                          <StatusBadge status={order.status} />
+                        </div>
+                        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                          <span className={cn(days.late && 'font-medium text-destructive')}>{days.text}</span>
+                          <span>{dateLabel(order.deliveryAt)}</span>
+                          {bal > 0 && <span className="font-medium text-foreground">Reste {currency(bal)}</span>}
+                        </div>
+                      </div>
+                      {expanded
+                        ? <ChevronUp className="size-4 shrink-0 text-muted-foreground" />
+                        : <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
+                      }
+                    </button>
+
+                    {expanded && (
+                      <div className="flex flex-col gap-4 border-t border-border px-4 pb-4 pt-3 sm:pl-[4.25rem]">
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <GarmentsSummary garments={order.garments || []} />
+                          <MeasurementsSummary measurements={order.measurements || []} />
+                        </div>
+
+                        {order.notes && (
+                          <p className="rounded-lg bg-muted px-3 py-2 text-sm italic text-muted-foreground">{order.notes}</p>
+                        )}
+
+                        <dl className="grid grid-cols-3 gap-3 text-sm">
+                          <div>
+                            <dt className="text-xs text-muted-foreground">Réception</dt>
+                            <dd className="font-medium">{dateLabel(order.fabricReceivedAt)}</dd>
+                          </div>
+                          <div>
+                            <dt className="text-xs text-muted-foreground">Prix</dt>
+                            <dd className="font-medium">{currency(order.totalPrice)}</dd>
+                          </div>
+                          <div>
+                            <dt className="text-xs text-muted-foreground">Reste</dt>
+                            <dd className="font-medium">{currency(bal)}</dd>
+                          </div>
+                        </dl>
+
+                        <div className="flex flex-wrap gap-2">
+                          {STATUSES.map((status) => (
+                            <Button
+                              key={status}
+                              variant={order.status === status ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => data.changeStatus(order.id, status as Status)}
+                            >
+                              {status}
+                            </Button>
+                          ))}
+                        </div>
+
+                        <div className="flex flex-col gap-2 sm:flex-row">
+                          <Button
+                            variant="outline"
+                            className="flex-1"
+                            onClick={() => nav.push(`orders/${order.id}/edit`)}
+                          >
+                            Modifier
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            className="flex-1"
+                            onClick={() => data.deleteOrder(order.id)}
+                          >
+                            Supprimer
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        )}
+      </div>
     </>
   );
 }

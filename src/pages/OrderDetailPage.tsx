@@ -1,7 +1,9 @@
+import { AlertTriangle } from 'lucide-react';
 import { STATUSES } from '@/constants';
 import { balance, currency, dateLabel, isLate } from '@/helpers';
 import { useAppDataContext } from '@/context/AppDataContext';
 import { useNavigationContext } from '@/context/NavigationContext';
+import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { StatusBadge } from '@/components/StatusBadge';
 import { PhotoPreview } from '@/components/PhotoPreview';
@@ -23,6 +25,9 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
     );
   }
 
+  const late = isLate(order);
+  const remaining = balance(order);
+
   function handleDelete() {
     if (window.confirm(`Supprimer la commande de ${order!.clientName} ? Cette action est définitive.`)) {
       deleteOrder(orderId);
@@ -35,95 +40,117 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
     <>
       <PageHeader
         title={order.clientName}
+        subtitle={`Livraison ${dateLabel(order.deliveryAt)}`}
         right={
-          <button
+          <Button
+            variant="outline"
             onClick={() => nav.push(`orders/${orderId}/edit`)}
-            className="rounded-full border border-border px-3 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
           >
             Modifier
-          </button>
+          </Button>
         }
       />
 
-      <div className="mx-auto max-w-xl space-y-6 px-4 py-6">
-        {/* Status + info */}
-        <div className="space-y-3 rounded-xl border border-border bg-card p-4">
-          <div className="flex items-center justify-between">
-            <StatusBadge status={order.status} />
-            {isLate(order) && <span className="text-xs font-medium text-destructive">⚠ En retard</span>}
-          </div>
-          <dl className="grid grid-cols-2 gap-3 text-sm">
-            <div><dt className="text-muted-foreground">Téléphone</dt><dd className="font-medium">{order.clientPhone}</dd></div>
-            {order.clientAddress && <div><dt className="text-muted-foreground">Adresse</dt><dd className="font-medium">{order.clientAddress}</dd></div>}
-            <div><dt className="text-muted-foreground">Tissu reçu</dt><dd className="font-medium">{dateLabel(order.fabricReceivedAt)}</dd></div>
-            <div><dt className="text-muted-foreground">Livraison</dt><dd className="font-medium">{dateLabel(order.deliveryAt)}</dd></div>
-            <div><dt className="text-muted-foreground">Total</dt><dd className="font-medium">{currency(order.totalPrice)}</dd></div>
-            <div><dt className="text-muted-foreground">Reste</dt><dd className="font-semibold text-foreground">{currency(balance(order))}</dd></div>
-          </dl>
-        </div>
+      <div className="mx-auto grid w-full max-w-6xl gap-4 p-4 pb-8 lg:grid-cols-[minmax(0,1fr)_340px] lg:p-6">
+        <main className="flex flex-col gap-4">
+          <section className="rounded-lg border border-border/70 bg-card p-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex flex-col gap-2">
+                <StatusBadge status={order.status} />
+                {late && (
+                  <p className="inline-flex items-center gap-2 text-sm font-medium text-destructive">
+                    <AlertTriangle className="size-4" />
+                    Commande en retard
+                  </p>
+                )}
+              </div>
+              <dl className="grid grid-cols-2 gap-4 text-sm sm:min-w-80">
+                <div>
+                  <dt className="text-muted-foreground">Total</dt>
+                  <dd className="text-lg font-medium text-foreground">{currency(order.totalPrice)}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Reste</dt>
+                  <dd className="text-lg font-medium text-foreground">{currency(remaining)}</dd>
+                </div>
+              </dl>
+            </div>
 
-        {/* Photos */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tissu</p>
-            <PhotoPreview title="Tissu" image={order.fabricPhoto} />
-          </div>
-          <div className="space-y-1.5">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Modèle</p>
-            <PhotoPreview title="Modèle" image={order.modelPhoto} />
-          </div>
-        </div>
+            <dl className="mt-5 grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <dt className="text-muted-foreground">Téléphone</dt>
+                <dd className="font-medium">{order.clientPhone}</dd>
+              </div>
+              {order.clientAddress && (
+                <div>
+                  <dt className="text-muted-foreground">Adresse</dt>
+                  <dd className="font-medium">{order.clientAddress}</dd>
+                </div>
+              )}
+              <div>
+                <dt className="text-muted-foreground">Tissu reçu</dt>
+                <dd className="font-medium">{dateLabel(order.fabricReceivedAt)}</dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Livraison</dt>
+                <dd className="font-medium">{dateLabel(order.deliveryAt)}</dd>
+              </div>
+            </dl>
+          </section>
 
-        {/* Vêtements */}
-        {(order.garments || []).length > 0 && (
-          <div className="space-y-2 rounded-xl border border-border bg-card p-4">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Vêtements</h3>
-            <GarmentsSummary garments={order.garments || []} />
-          </div>
-        )}
+          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-2">
+              <p className="text-xs font-medium uppercase tracking-normal text-muted-foreground">Tissu</p>
+              <PhotoPreview title="Tissu" image={order.fabricPhoto} />
+            </div>
+            <div className="flex flex-col gap-2">
+              <p className="text-xs font-medium uppercase tracking-normal text-muted-foreground">Modèle</p>
+              <PhotoPreview title="Modèle" image={order.modelPhoto} />
+            </div>
+          </section>
 
-        {/* Mesures */}
-        {(order.measurements || []).some((m) => m.value) && (
-          <div className="space-y-2 rounded-xl border border-border bg-card p-4">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Mesures</h3>
-            <MeasurementsSummary measurements={order.measurements || []} />
-          </div>
-        )}
+          {order.notes && (
+            <section className="rounded-lg border border-border/70 bg-card p-4">
+              <p className="text-sm italic leading-6 text-muted-foreground">{order.notes}</p>
+            </section>
+          )}
+        </main>
 
-        {/* Notes */}
-        {order.notes && (
-          <div className="rounded-xl border border-border bg-card p-4">
-            <p className="text-sm italic text-muted-foreground">{order.notes}</p>
-          </div>
-        )}
+        <aside className="flex flex-col gap-4">
+          {(order.garments || []).length > 0 && (
+            <section className="rounded-lg border border-border/70 bg-card p-4">
+              <h2 className="mb-3 text-sm font-medium text-foreground">Vêtements</h2>
+              <GarmentsSummary garments={order.garments || []} />
+            </section>
+          )}
 
-        {/* Quick-status */}
-        <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Changer le statut</p>
-          <div className="flex gap-2 flex-wrap">
-            {STATUSES.map((s) => (
-              <button
-                key={s}
-                onClick={() => changeStatus(orderId, s as Status)}
-                className={`rounded-full px-4 py-1.5 text-xs font-medium transition-colors ${
-                  order.status === s
-                    ? 'bg-foreground text-background'
-                    : 'border border-border text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-        </div>
+          {(order.measurements || []).some((m) => m.value) && (
+            <section className="rounded-lg border border-border/70 bg-card p-4">
+              <h2 className="mb-3 text-sm font-medium text-foreground">Mesures</h2>
+              <MeasurementsSummary measurements={order.measurements || []} />
+            </section>
+          )}
 
-        {/* Danger zone */}
-        <button
-          onClick={handleDelete}
-          className="w-full rounded-full border border-destructive/40 py-2.5 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
-        >
-          Supprimer cette commande
-        </button>
+          <section className="flex flex-col gap-3 rounded-lg border border-border/70 bg-card p-4">
+            <h2 className="text-sm font-medium text-foreground">Statut</h2>
+            <div className="flex flex-wrap gap-2">
+              {STATUSES.map((status) => (
+                <Button
+                  key={status}
+                  variant={order.status === status ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => changeStatus(orderId, status as Status)}
+                >
+                  {status}
+                </Button>
+              ))}
+            </div>
+          </section>
+
+          <Button variant="destructive" onClick={handleDelete}>
+            Supprimer cette commande
+          </Button>
+        </aside>
       </div>
     </>
   );
