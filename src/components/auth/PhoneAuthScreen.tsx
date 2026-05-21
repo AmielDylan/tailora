@@ -123,7 +123,7 @@ export function PhoneAuthScreen({ onSuccess }: Props) {
                   type="tel"
                   inputMode="tel"
                   autoComplete="tel-national"
-                  placeholder="97 00 00 00"
+                  placeholder="01 97 00 00 00"
                   value={phone}
                   onChange={(e) => { setPhone(localBeninPhone(e.target.value)); setError(''); }}
                   className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm outline-none"
