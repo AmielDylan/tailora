@@ -13,10 +13,10 @@ export const LAST_ACTIVE_KEY = 'tailora-last-active';
 export const LOCK_TIMEOUT_KEY = 'tailora-lock-timeout'; // minutes, 0 = manual only
 
 export const defaultMeasurements: Measurement[] = [
-  { id: 'm-1', label: 'Poitrine', value: '', inputType: 'number' },
-  { id: 'm-2', label: 'Taille', value: '', inputType: 'number' },
-  { id: 'm-3', label: 'Hanches', value: '', inputType: 'number' },
-  { id: 'm-4', label: 'Longueur robe', value: '', inputType: 'number' },
+  { id: 'm-1', label: 'Poitrine', value: '', inputType: 'text' },
+  { id: 'm-2', label: 'Taille', value: '', inputType: 'text' },
+  { id: 'm-3', label: 'Hanches', value: '', inputType: 'text' },
+  { id: 'm-4', label: 'Longueur robe', value: '', inputType: 'text' },
 ];
 
 export const demoClients: Client[] = [
@@ -36,10 +36,10 @@ export const demoOrders: Order[] = [
     status: 'En cours',
     notes: 'Garder une coupe ample.',
     measurements: [
-      { id: 'm-1', label: 'Poitrine', value: '92', inputType: 'number' },
-      { id: 'm-2', label: 'Taille', value: '68', inputType: 'number' },
-      { id: 'm-3', label: 'Hanches', value: '98', inputType: 'number' },
-      { id: 'm-4', label: 'Longueur robe', value: '130', inputType: 'number' },
+      { id: 'm-1', label: 'Poitrine', value: '92', inputType: 'text' },
+      { id: 'm-2', label: 'Taille', value: '68', inputType: 'text' },
+      { id: 'm-3', label: 'Hanches', value: '98', inputType: 'text' },
+      { id: 'm-4', label: 'Longueur robe', value: '130', inputType: 'text' },
     ],
     garments: [
       { id: 'g-1', description: 'Robe longue manches trois-quarts', fabricType: 'Wax', quantity: 1 },
@@ -59,10 +59,10 @@ export const demoOrders: Order[] = [
     status: 'Terminée',
     notes: 'Cérémonie familiale.',
     measurements: [
-      { id: 'm-1', label: 'Poitrine', value: '88', inputType: 'number' },
-      { id: 'm-2', label: 'Taille', value: '64', inputType: 'number' },
-      { id: 'm-3', label: 'Hanches', value: '94', inputType: 'number' },
-      { id: 'm-4', label: 'Longueur robe', value: '120', inputType: 'number' },
+      { id: 'm-1', label: 'Poitrine', value: '88', inputType: 'text' },
+      { id: 'm-2', label: 'Taille', value: '64', inputType: 'text' },
+      { id: 'm-3', label: 'Hanches', value: '94', inputType: 'text' },
+      { id: 'm-4', label: 'Longueur robe', value: '120', inputType: 'text' },
     ],
     garments: [
       { id: 'g-2', description: 'Boubou simple', fabricType: 'Bazin', quantity: 1 },
@@ -85,7 +85,7 @@ export function makeEmptyForm(): FormState {
     status: 'Reçue',
     notes: '',
     measurements: defaultMeasurements.map((m) => ({ ...m, value: '' })),
-    garments: [{ id: uid('g'), description: '', fabricType: '', quantity: 1 }],
+    garments: [{ id: uid('g'), description: '', fabricType: '', quantity: 1, measurements: defaultMeasurements.map((m) => ({ ...m })) }],
     totalPrice: 0,
     deposit: 0,
     fabricPhoto: '',

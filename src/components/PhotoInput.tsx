@@ -41,7 +41,7 @@ export function PhotoInput({ label, required, image, onFile, onUrl, onRemove }: 
             aria-label="Retirer"
             className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-foreground/80 text-background backdrop-blur-sm transition-opacity hover:opacity-100"
           >
-            <X className="h-3.5 w-3.5" />
+            <X className="h-3.5 w-3.5" strokeWidth={1.25} />
           </button>
         )}
       </div>
@@ -59,7 +59,7 @@ export function PhotoInput({ label, required, image, onFile, onUrl, onRemove }: 
                 : 'text-muted-foreground hover:text-foreground',
             )}
           >
-            {t === 'file' ? 'Téléphone' : 'Lien URL'}
+            {t === 'file' ? 'Importer' : 'Lien URL'}
           </button>
         ))}
       </div>

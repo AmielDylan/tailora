@@ -92,7 +92,7 @@ export function ClientListPage() {
             className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground"
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
           >
-            Cmds <ArrowUpDown className="size-3" />
+            Commande <ArrowUpDown className="size-3" />
           </button>
         ),
         cell: ({ getValue }) => <span className="text-sm tabular-nums">{getValue<number>()}</span>,
