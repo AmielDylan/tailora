@@ -9,9 +9,11 @@ type Props = {
   subtitle?: string;
   right?: React.ReactNode;
   className?: string;
+  titleClassName?: string;
+  subtitleClassName?: string;
 };
 
-export function PageHeader({ title, subtitle, right, className }: Props) {
+export function PageHeader({ title, subtitle, right, className, titleClassName, subtitleClassName }: Props) {
   const { canGoBack, pop } = useNavigationContext();
 
   return (
@@ -37,10 +39,10 @@ export function PageHeader({ title, subtitle, right, className }: Props) {
       )}
 
       <div className="min-w-0 flex-1">
-        <h1 className="truncate font-heading text-sm font-medium tracking-normal text-foreground">
+        <h1 className={cn('truncate font-heading text-sm font-medium tracking-normal text-foreground', titleClassName)}>
           {title}
         </h1>
-        {subtitle && <p className="truncate text-xs text-muted-foreground">{subtitle}</p>}
+        {subtitle && <p className={cn('truncate text-xs text-muted-foreground', subtitleClassName)}>{subtitle}</p>}
       </div>
 
       {right && <div className="flex items-center gap-2">{right}</div>}

@@ -50,6 +50,8 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
       <PageHeader
         title={order.clientName}
         subtitle={`Livraison prévue le ${dateLabel(order.deliveryAt)}`}
+        titleClassName="hidden md:block"
+        subtitleClassName="hidden md:block"
         right={
           <Button variant="outline" onClick={() => nav.push(`orders/${orderId}/edit`)}>
             Modifier
@@ -58,6 +60,11 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
       />
 
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 p-4 pb-8 lg:p-6">
+        <div className="flex flex-col gap-1 md:hidden">
+          <h1 className="text-lg font-medium tracking-normal text-foreground">{order.clientName}</h1>
+          <p className="text-sm text-muted-foreground">Livraison prévue le {dateLabel(order.deliveryAt)}</p>
+        </div>
+
         <section className="flex flex-col gap-3 rounded-lg border border-border/70 bg-card p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-col gap-2">
