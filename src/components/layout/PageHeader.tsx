@@ -1,40 +1,47 @@
 import { ChevronLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useNavigationContext } from '@/context/NavigationContext';
 import { cn } from '@/lib/utils';
 
 type Props = {
   title: string;
+  subtitle?: string;
   right?: React.ReactNode;
   className?: string;
 };
 
-export function PageHeader({ title, right, className }: Props) {
+export function PageHeader({ title, subtitle, right, className }: Props) {
   const { canGoBack, pop } = useNavigationContext();
 
   return (
     <header
       className={cn(
-        'flex h-14 shrink-0 items-center gap-2 border-b border-border bg-background px-4',
+        'sticky top-0 z-20 flex min-h-16 shrink-0 items-center gap-3 border-b border-border bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/85',
         className,
       )}
     >
       <SidebarTrigger className="-ml-1 lg:hidden" />
 
       {canGoBack && (
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={pop}
           aria-label="Retour"
-          className="flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+          className="shrink-0 text-muted-foreground"
         >
-          <ChevronLeft className="h-4 w-4" />
+          <ChevronLeft data-icon="inline-start" />
           Retour
-        </button>
+        </Button>
       )}
 
-      <h2 className="flex-1 truncate font-heading text-base font-semibold text-foreground">
-        {title}
-      </h2>
+      <div className="min-w-0 flex-1">
+        <h1 className="truncate font-heading text-lg font-medium tracking-normal text-foreground">
+          {title}
+        </h1>
+        {subtitle && <p className="truncate text-xs text-muted-foreground">{subtitle}</p>}
+      </div>
 
       {right && <div className="flex items-center gap-2">{right}</div>}
     </header>
