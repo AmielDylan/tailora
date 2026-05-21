@@ -5,7 +5,6 @@ import { cn } from '@/lib/utils';
 
 const BG_IMAGES = ['/images/tailor_men.png', '/images/tailor_women.png'];
 const BENIN_DIAL_CODE = '+229';
-const BENIN_FLAG = '🇧🇯';
 
 type Credentials = { phone: string; password: string };
 
@@ -110,7 +109,14 @@ export function PhoneAuthScreen({ onSuccess }: Props) {
                   aria-label="Indicatif Bénin"
                   className="flex shrink-0 items-center gap-2 border-r border-border bg-muted px-3 text-sm font-medium text-foreground"
                 >
-                  <span>{BENIN_FLAG}</span>
+                  <span
+                    aria-hidden="true"
+                    className="grid h-3.5 w-5 grid-cols-[2fr_3fr] grid-rows-2 overflow-hidden rounded-[2px] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.12)]"
+                  >
+                    <span className="row-span-2 bg-[#008751]" />
+                    <span className="bg-[#fcd116]" />
+                    <span className="bg-[#e8112d]" />
+                  </span>
                   <span>{BENIN_DIAL_CODE}</span>
                 </div>
                 <input
