@@ -33,13 +33,6 @@ export function GarmentsEditor({ garments, baseMeasurements, onChange }: Props) 
     onChange(garments.map((g) => (g.id === id ? { ...g, [field]: value } : g)));
   }
 
-  function readPhoto(id: string, key: 'fabricPhoto' | 'modelPhoto', file?: File) {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => update(id, key, String(reader.result));
-    reader.readAsDataURL(file);
-  }
-
   function removeModelPhoto(id: string) {
     onChange(garments.map((g) => (g.id === id ? { ...g, modelPhoto: '', photo: '', modelLinks: [] } : g)));
   }
@@ -185,7 +178,7 @@ export function GarmentsEditor({ garments, baseMeasurements, onChange }: Props) 
               label="Photo du tissu"
               image={g.fabricPhoto}
               links={g.fabricLinks ?? []}
-              onFile={(e) => readPhoto(g.id, 'fabricPhoto', e.target.files?.[0])}
+              onImage={(base64) => update(g.id, 'fabricPhoto', base64)}
               onAddLink={(url) => addLink(g.id, 'fabricLinks', url)}
               onRemoveLink={(i) => removeLink(g.id, 'fabricLinks', i)}
               onRemove={() => removeFabricPhoto(g.id)}
@@ -194,7 +187,7 @@ export function GarmentsEditor({ garments, baseMeasurements, onChange }: Props) 
               label="Photo du modèle"
               image={g.modelPhoto || g.photo}
               links={g.modelLinks ?? []}
-              onFile={(e) => readPhoto(g.id, 'modelPhoto', e.target.files?.[0])}
+              onImage={(base64) => update(g.id, 'modelPhoto', base64)}
               onAddLink={(url) => addLink(g.id, 'modelLinks', url)}
               onRemoveLink={(i) => removeLink(g.id, 'modelLinks', i)}
               onRemove={() => removeModelPhoto(g.id)}
