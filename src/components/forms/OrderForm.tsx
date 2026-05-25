@@ -302,11 +302,11 @@ export function OrderForm({ orderId, onSave, onCancel }: Props) {
       </Section>
 
       <div className="flex flex-col gap-3 pt-2 sm:flex-row">
-        <Button type="submit" className="flex-1">
+        <Button type="submit" className="min-h-10 w-full px-4 sm:min-h-8 sm:flex-1">
           {orderId ? 'Enregistrer les modifications' : 'Ajouter la commande'}
         </Button>
         {onCancel && (
-          <Button type="button" variant="outline" onClick={onCancel}>
+          <Button type="button" variant="outline" onClick={onCancel} className="min-h-10 w-full px-4 sm:min-h-8 sm:w-auto">
             Annuler
           </Button>
         )}
