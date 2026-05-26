@@ -32,6 +32,18 @@ Les regles publiees limitent l'acces aux documents situes sous `users/{uid}/...`
 
 ## Authentification telephone
 
+Le MVP utilise une connexion numero beninois + mot de passe, sans OTP SMS.
+
+Pour rester compatible avec Firebase Auth sans demander d'email aux couturiers, Tailora utilise en interne le provider Firebase Email/Password avec un email technique derive du numero :
+
+```txt
++229 01 90 00 00 00 -> p2290190000000@phone.tailora.app
+```
+
+Cet email technique n'est pas affiche a l'utilisateur. Un vrai email pourra etre ajoute plus tard dans le profil, comme moyen de contact ou comme option de connexion separee.
+
+A activer dans Firebase Console : Authentication > Sign-in method > Email/Password. Cette option ne declenche pas de SMS.
+
 Pour utiliser les SMS au Benin :
 
 - activer Firebase Authentication > Phone dans la console Firebase ;
