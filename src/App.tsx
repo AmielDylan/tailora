@@ -1,18 +1,18 @@
 import { useCallback, useEffect, useState } from 'react';
-import { AUTH_KEY, CREDENTIALS_KEY, PIN_ENABLED_KEY, LAST_ACTIVE_KEY, LOCK_TIMEOUT_KEY } from '@/constants';
+import { AUTH_KEY, PIN_ENABLED_KEY, LAST_ACTIVE_KEY, LOCK_TIMEOUT_KEY } from '@/constants';
 import { PhoneAuthScreen } from '@/components/auth/PhoneAuthScreen';
 import { PinScreen } from '@/components/PinScreen';
 import { AppDataProvider } from '@/context/AppDataContext';
 import { NavigationProvider } from '@/context/NavigationContext';
 import { AppShell } from '@/components/layout/AppShell';
+import { logoutAuth } from '@/lib/auth';
 
 export function App() {
   const [authenticated, setAuthenticated] = useState(() => localStorage.getItem(AUTH_KEY) === 'true');
   const [locked, setLocked] = useState(false);
-  const credentialsExist = Boolean(localStorage.getItem(CREDENTIALS_KEY));
 
   function logout() {
-    localStorage.removeItem(AUTH_KEY);
+    void logoutAuth();
     localStorage.removeItem(LAST_ACTIVE_KEY);
     setLocked(false);
     setAuthenticated(false);

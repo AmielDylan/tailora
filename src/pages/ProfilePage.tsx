@@ -19,8 +19,17 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { updateCurrentPassword } from '@/lib/auth';
 
-type Credentials = { phone: string; password: string };
+type Credentials = {
+  phone: string;
+  password?: string;
+  passwordHash?: string;
+  passwordSalt?: string;
+  authProvider?: 'firebase' | 'local';
+  firebaseUid?: string;
+  updatedAt?: string;
+};
 
 const TIMEOUT_OPTIONS = [
   { value: 5, label: '5 min' },
@@ -143,16 +152,11 @@ export function ProfilePage() {
 
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  function saveIdentity(e: React.FormEvent) {
+  async function saveIdentity(e: React.FormEvent) {
     e.preventDefault();
     setIdentityMsg('');
     const trimPhone = phone.trim();
     if (!trimPhone) { setIdentityMsg('Le numéro est requis.'); return; }
-
-    const creds: Credentials = {
-      phone: trimPhone,
-      password: newPassword.trim().length >= 6 ? newPassword.trim() : (storedCreds.password ?? ''),
-    };
 
     if (newPassword.trim() && newPassword.trim().length < 6) {
       setIdentityMsg('Le nouveau mot de passe doit contenir au moins 6 caractères.'); return;
@@ -161,7 +165,21 @@ export function ProfilePage() {
       setIdentityMsg('Les mots de passe ne correspondent pas.'); return;
     }
 
-    localStorage.setItem(CREDENTIALS_KEY, JSON.stringify(creds));
+    if (newPassword.trim()) {
+      try {
+        await updateCurrentPassword(newPassword.trim());
+      } catch {
+        setIdentityMsg('Impossible de mettre Ã  jour le mot de passe pour le moment.');
+        return;
+      }
+    }
+
+    const latest = JSON.parse(localStorage.getItem(CREDENTIALS_KEY) ?? '{}') as Partial<Credentials>;
+    localStorage.setItem(CREDENTIALS_KEY, JSON.stringify({
+      ...latest,
+      phone: trimPhone,
+      updatedAt: new Date().toISOString(),
+    }));
     setNewPassword('');
     setConfirmPassword('');
     setIdentityMsg('Profil mis à jour.');

@@ -1,41 +1,22 @@
 import { useEffect, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
-import { AUTH_KEY, CREDENTIALS_KEY } from '@/constants';
 import { cn } from '@/lib/utils';
+import {
+  formatBeninPhone,
+  fullBeninPhone,
+  hasStoredAccount,
+  isValidBeninPhone,
+  loginWithPhonePassword,
+  registerWithPhonePassword,
+} from '@/lib/auth';
 
 const BG_IMAGES = ['/images/tailor_men.webp', '/images/tailor_women.webp'];
 const BENIN_DIAL_CODE = '+229';
 
-type Credentials = { phone: string; password: string };
-
 type Props = { onSuccess: () => void };
 
-function beninPhoneDigits(value: string) {
-  const digits = value.replace(/\D/g, '').replace(/^229/, '');
-  if (!digits) return '';
-  if (digits.startsWith('01')) return digits.slice(0, 10);
-  return `01${digits.replace(/^0+/, '')}`.slice(0, 10);
-}
-
-function formatBeninPhone(value: string) {
-  return beninPhoneDigits(value).replace(/(\d{2})(?=\d)/g, '$1 ').trim();
-}
-
-function isValidBeninPhone(value: string) {
-  const digits = beninPhoneDigits(value);
-  return digits.length === 10 && digits.startsWith('01');
-}
-
-function localBeninPhone(value: string) {
-  return formatBeninPhone(value);
-}
-
-function fullBeninPhone(value: string) {
-  return `${BENIN_DIAL_CODE} ${localBeninPhone(value)}`.trim();
-}
-
 export function PhoneAuthScreen({ onSuccess }: Props) {
-  const isRegistration = !localStorage.getItem(CREDENTIALS_KEY);
+  const isRegistration = !hasStoredAccount();
 
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -43,6 +24,7 @@ export function PhoneAuthScreen({ onSuccess }: Props) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const [imgIndex, setImgIndex] = useState(() => Math.floor(Math.random() * BG_IMAGES.length));
 
@@ -51,39 +33,41 @@ export function PhoneAuthScreen({ onSuccess }: Props) {
     return () => clearInterval(id);
   }, []);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
 
-    const trimPhone = localBeninPhone(phone);
-    const completePhone = fullBeninPhone(phone);
+    const trimPhone = formatBeninPhone(phone);
     const trimPass = password.trim();
 
     if (!trimPhone) { setError('Entrez votre numéro de téléphone.'); return; }
     if (!isValidBeninPhone(trimPhone)) { setError('Entrez un numéro béninois valide au format 01 90 00 00 00.'); return; }
     if (trimPass.length < 6) { setError('Le mot de passe doit contenir au moins 6 caractères.'); return; }
 
-    if (isRegistration) {
-      if (trimPass !== confirm.trim()) { setError('Les mots de passe ne correspondent pas.'); return; }
-      const creds: Credentials = { phone: completePhone, password: trimPass };
-      localStorage.setItem(CREDENTIALS_KEY, JSON.stringify(creds));
-      localStorage.setItem(AUTH_KEY, 'true');
-      onSuccess();
-    } else {
-      const stored = JSON.parse(localStorage.getItem(CREDENTIALS_KEY)!) as Credentials;
-      if ((completePhone === stored.phone || trimPhone === stored.phone || beninPhoneDigits(stored.phone) === beninPhoneDigits(trimPhone)) && trimPass === stored.password) {
-        localStorage.setItem(AUTH_KEY, 'true');
-        onSuccess();
+    setLoading(true);
+    try {
+      if (isRegistration) {
+        if (trimPass !== confirm.trim()) { setError('Les mots de passe ne correspondent pas.'); return; }
+        await registerWithPhonePassword(fullBeninPhone(phone), trimPass);
       } else {
-        setError('Numéro ou mot de passe incorrect.');
+        await loginWithPhonePassword(fullBeninPhone(phone), trimPass);
       }
+      onSuccess();
+    } catch (authError) {
+      if ((authError as Error).message === 'INVALID_CREDENTIALS') {
+        setError('Numéro ou mot de passe incorrect.');
+      } else {
+        setError('Impossible de se connecter pour le moment. Réessayez dans un instant.');
+      }
+    } finally {
+      setLoading(false);
     }
   }
 
   const title = isRegistration ? 'Créer votre compte' : 'Bon retour';
   const subtitle = isRegistration
-    ? 'Créez votre accès Tailora pour commencer.'
-    : 'Connectez-vous pour accéder à votre carnet.';
+    ? 'Créez votre accès Tailora avec votre numéro.'
+    : 'Connectez-vous avec votre numéro et votre mot de passe.';
 
   return (
     <div className="relative h-screen overflow-hidden lg:flex">
@@ -101,23 +85,19 @@ export function PhoneAuthScreen({ onSuccess }: Props) {
         ))}
         <div className="absolute inset-0 bg-black/25" />
       </div>
-      {/* ── Panneau gauche ── */}
       <div className="relative z-10 flex h-full flex-1 flex-col items-center justify-center overflow-y-auto px-4 py-8 sm:px-8 lg:bg-background lg:py-12">
         <div className="w-full max-w-sm space-y-8 rounded-xl border border-white/40 bg-background/90 p-6 shadow-xl shadow-black/15 backdrop-blur-md supports-[backdrop-filter]:bg-background/90 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none lg:backdrop-blur-none">
-          {/* Logo */}
           <div>
             <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground">
               Tailora
             </h1>
           </div>
 
-          {/* Titre */}
           <div className="space-y-1">
             <h2 className="text-xl font-semibold text-foreground">{title}</h2>
             <p className="text-sm text-muted-foreground">{subtitle}</p>
           </div>
 
-          {/* Formulaire */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <label className="block text-sm font-medium text-foreground">Numéro de téléphone</label>
@@ -198,15 +178,15 @@ export function PhoneAuthScreen({ onSuccess }: Props) {
 
             <button
               type="submit"
-              className="w-full rounded-full bg-foreground py-2.5 text-sm font-medium text-background transition-opacity hover:opacity-80"
+              disabled={loading}
+              className="w-full rounded-full bg-foreground py-2.5 text-sm font-medium text-background transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isRegistration ? 'Créer mon compte' : 'Se connecter'}
+              {loading ? 'Veuillez patienter...' : isRegistration ? 'Créer mon compte' : 'Se connecter'}
             </button>
           </form>
         </div>
       </div>
 
-      {/* ── Panneau droit (desktop uniquement) ── */}
       <div className="relative hidden lg:block lg:w-1/2">
         {BG_IMAGES.map((src, i) => (
           <img
