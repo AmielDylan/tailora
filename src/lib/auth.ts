@@ -7,7 +7,7 @@ import {
   type AuthError,
   type User,
 } from 'firebase/auth';
-import { AUTH_KEY, CREDENTIALS_KEY } from '@/constants';
+import { AUTH_KEY, CREDENTIALS_KEY, STORAGE_KEY } from '@/constants';
 import { getFirebaseServices } from '@/lib/firebase';
 
 const PHONE_EMAIL_DOMAIN = 'phone.tailora.app';
@@ -123,6 +123,10 @@ function markAuthenticated() {
   localStorage.setItem(AUTH_KEY, 'true');
 }
 
+function resetAppDataForNewAccount() {
+  localStorage.removeItem(STORAGE_KEY);
+}
+
 export async function registerWithPhonePassword(phone: string, password: string): Promise<AuthResult> {
   const services = getFirebaseServices();
 
@@ -130,6 +134,7 @@ export async function registerWithPhonePassword(phone: string, password: string)
     try {
       const result = await createUserWithEmailAndPassword(services.auth, phoneAuthEmail(phone), password);
       await persistFirebaseSession(result.user, phone, password);
+      resetAppDataForNewAccount();
       markAuthenticated();
       return { provider: 'firebase', user: result.user };
     } catch (error) {
@@ -138,6 +143,7 @@ export async function registerWithPhonePassword(phone: string, password: string)
   }
 
   await saveLocalAccount(phone, password);
+  resetAppDataForNewAccount();
   markAuthenticated();
   return { provider: 'local' };
 }

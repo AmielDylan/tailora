@@ -61,8 +61,7 @@ export function DashboardPage() {
   const newOrderBtn = (
     <Button onClick={() => nav.push('orders/new')} size="lg">
       <Plus data-icon="inline-start" strokeWidth={1.25} />
-      <span className="hidden sm:inline">Nouvelle commande</span>
-      <span className="sm:hidden">Nouvelle</span>
+      <span>Nouvelle commande</span>
     </Button>
   );
 
@@ -73,6 +72,7 @@ export function DashboardPage() {
         <div className="flex flex-1 items-center justify-center p-6">
           <EmptyState
             icon={Package}
+            imageSrc="/images/empty-states/dashboard.png"
             title="Aucune commande enregistrée"
             subtitle="Ajoutez une commande pour suivre les clientes, les mesures et les livraisons."
             action={{ label: 'Nouvelle commande', onClick: () => nav.push('orders/new') }}
