@@ -10,7 +10,6 @@ import {
 import { AUTH_KEY, CREDENTIALS_KEY } from '@/constants';
 import { getFirebaseServices } from '@/lib/firebase';
 
-const BENIN_DIAL_CODE = '+229';
 const PHONE_EMAIL_DOMAIN = 'phone.tailora.app';
 
 type StoredCredentials = {
@@ -28,29 +27,22 @@ export type AuthResult = {
   user?: User;
 };
 
-export function beninPhoneDigits(value: string) {
-  const digits = value.replace(/\D/g, '').replace(/^229/, '');
-  if (!digits) return '';
-  if (digits.startsWith('01')) return digits.slice(0, 10);
-  return `01${digits.replace(/^0+/, '')}`.slice(0, 10);
+export function internationalPhoneDigits(value: string) {
+  return value.replace(/\D/g, '');
 }
 
-export function formatBeninPhone(value: string) {
-  return beninPhoneDigits(value).replace(/(\d{2})(?=\d)/g, '$1 ').trim();
+export function normalizeInternationalPhone(value: string) {
+  const digits = internationalPhoneDigits(value);
+  return digits ? `+${digits}` : '';
 }
 
-export function isValidBeninPhone(value: string) {
-  const digits = beninPhoneDigits(value);
-  return digits.length === 10 && digits.startsWith('01');
-}
-
-export function fullBeninPhone(value: string) {
-  const localPhone = formatBeninPhone(value);
-  return localPhone ? `${BENIN_DIAL_CODE} ${localPhone}` : '';
+export function isValidInternationalPhone(value: string) {
+  const digits = internationalPhoneDigits(value);
+  return digits.length >= 6 && digits.length <= 15;
 }
 
 export function phoneAuthEmail(value: string) {
-  return `p229${beninPhoneDigits(value)}@${PHONE_EMAIL_DOMAIN}`;
+  return `p${internationalPhoneDigits(value)}@${PHONE_EMAIL_DOMAIN}`;
 }
 
 export function hasStoredAccount() {
@@ -97,7 +89,7 @@ async function hashPassword(password: string, salt: string) {
 async function saveLocalAccount(phone: string, password: string, firebaseUid?: string): Promise<void> {
   const salt = randomSalt();
   const credentials: StoredCredentials = {
-    phone: fullBeninPhone(phone),
+    phone: normalizeInternationalPhone(phone),
     passwordHash: await hashPassword(password, salt),
     passwordSalt: salt,
     authProvider: firebaseUid ? 'firebase' : 'local',
@@ -112,7 +104,7 @@ async function localPasswordMatches(phone: string, password: string) {
   const stored = readStoredCredentials();
   if (!stored) return false;
 
-  const samePhone = beninPhoneDigits(stored.phone) === beninPhoneDigits(phone);
+  const samePhone = internationalPhoneDigits(stored.phone) === internationalPhoneDigits(phone);
   if (!samePhone) return false;
 
   if (stored.passwordHash && stored.passwordSalt) {
@@ -123,7 +115,7 @@ async function localPasswordMatches(phone: string, password: string) {
 }
 
 async function persistFirebaseSession(user: User, phone: string, password: string) {
-  await updateProfile(user, { displayName: fullBeninPhone(phone) }).catch(() => undefined);
+  await updateProfile(user, { displayName: normalizeInternationalPhone(phone) }).catch(() => undefined);
   await saveLocalAccount(phone, password, user.uid);
 }
 
