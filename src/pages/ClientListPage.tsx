@@ -135,6 +135,7 @@ export function ClientListPage() {
         {clients.length === 0 ? (
           <EmptyState
             icon={Users}
+            imageSrc="/images/empty-states/clients.png"
             title="Aucun client"
             subtitle="Les clients sont créés automatiquement à la première commande."
             className="bg-card"

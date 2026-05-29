@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Client, Order, Status } from '@/types';
-import { demoClients, STATUSES } from '@/constants';
+import { STATUSES } from '@/constants';
 import { today, isLate, balance } from '@/helpers';
 import { loadState, saveState } from '@/lib/storage';
 
