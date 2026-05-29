@@ -1,4 +1,4 @@
-import type { Client, Measurement, Order, Status } from './types';
+import type { Measurement, Status } from './types';
 import type { FormState } from './types';
 import { uid, today } from './helpers';
 
@@ -17,61 +17,6 @@ export const defaultMeasurements: Measurement[] = [
   { id: 'm-2', label: 'Taille', value: '', inputType: 'text' },
   { id: 'm-3', label: 'Hanches', value: '', inputType: 'text' },
   { id: 'm-4', label: 'Longueur robe', value: '', inputType: 'text' },
-];
-
-export const demoClients: Client[] = [
-  { id: 'client-awa', name: 'Awa Diop', phone: '+221 77 123 45 67', address: 'Plateau, Dakar', country: 'SN', notes: 'Préfère être appelée le matin.' },
-  { id: 'client-mariam', name: 'Mariam Fall', phone: '+221 76 987 65 43', address: 'Medina, Dakar', country: 'SN' },
-];
-
-export const demoOrders: Order[] = [
-  {
-    id: 'order-001',
-    clientId: 'client-awa',
-    clientName: 'Awa Diop',
-    clientPhone: '+221 77 123 45 67',
-    clientAddress: 'Plateau, Dakar',
-    fabricReceivedAt: '2026-05-15',
-    deliveryAt: '2026-05-20',
-    status: 'En cours',
-    notes: 'Garder une coupe ample.',
-    measurements: [
-      { id: 'm-1', label: 'Poitrine', value: '92', inputType: 'text' },
-      { id: 'm-2', label: 'Taille', value: '68', inputType: 'text' },
-      { id: 'm-3', label: 'Hanches', value: '98', inputType: 'text' },
-      { id: 'm-4', label: 'Longueur robe', value: '130', inputType: 'text' },
-    ],
-    garments: [
-      { id: 'g-1', description: 'Robe longue manches trois-quarts', fabricType: 'Wax', fabricQuantity: 4, fabricUnit: 'm', quantity: '1' },
-    ],
-    totalPrice: 35000,
-    deposit: 15000,
-    createdAt: '2026-05-15T09:00:00.000Z',
-  },
-  {
-    id: 'order-002',
-    clientId: 'client-mariam',
-    clientName: 'Mariam Fall',
-    clientPhone: '+221 76 987 65 43',
-    clientAddress: 'Medina, Dakar',
-    fabricReceivedAt: '2026-05-10',
-    deliveryAt: '2026-05-17',
-    status: 'Terminée',
-    notes: 'Cérémonie familiale.',
-    measurements: [
-      { id: 'm-1', label: 'Poitrine', value: '88', inputType: 'text' },
-      { id: 'm-2', label: 'Taille', value: '64', inputType: 'text' },
-      { id: 'm-3', label: 'Hanches', value: '94', inputType: 'text' },
-      { id: 'm-4', label: 'Longueur robe', value: '120', inputType: 'text' },
-    ],
-    garments: [
-      { id: 'g-2', description: 'Boubou simple', fabricType: 'Bazin', fabricQuantity: 350, fabricUnit: 'cm', quantity: '1' },
-      { id: 'g-3', description: 'Ensemble enfant', fabricType: 'Wax', fabricQuantity: 2.5, fabricUnit: 'm', quantity: '2' },
-    ],
-    totalPrice: 28000,
-    deposit: 28000,
-    createdAt: '2026-05-10T11:00:00.000Z',
-  },
 ];
 
 export function makeEmptyForm(): FormState {
