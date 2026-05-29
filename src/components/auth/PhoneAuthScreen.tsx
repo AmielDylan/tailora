@@ -1,17 +1,20 @@
 import { useEffect, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
+import {
+  PhoneInput,
+  PhoneInputCountrySelect,
+  PhoneInputField,
+} from '@/components/ui/phone-input';
 import { cn } from '@/lib/utils';
 import {
-  formatBeninPhone,
-  fullBeninPhone,
   hasStoredAccount,
-  isValidBeninPhone,
+  isValidInternationalPhone,
   loginWithPhonePassword,
+  normalizeInternationalPhone,
   registerWithPhonePassword,
 } from '@/lib/auth';
 
 const BG_IMAGES = ['/images/tailor_men.webp', '/images/tailor_women.webp'];
-const BENIN_DIAL_CODE = '+229';
 
 type Props = { onSuccess: () => void };
 
@@ -37,20 +40,20 @@ export function PhoneAuthScreen({ onSuccess }: Props) {
     e.preventDefault();
     setError('');
 
-    const trimPhone = formatBeninPhone(phone);
+    const normalizedPhone = normalizeInternationalPhone(phone);
     const trimPass = password.trim();
 
-    if (!trimPhone) { setError('Entrez votre numéro de téléphone.'); return; }
-    if (!isValidBeninPhone(trimPhone)) { setError('Entrez un numéro béninois valide au format 01 90 00 00 00.'); return; }
+    if (!normalizedPhone) { setError('Entrez votre numéro de téléphone.'); return; }
+    if (!isValidInternationalPhone(normalizedPhone)) { setError('Entrez un numéro valide avec son indicatif pays.'); return; }
     if (trimPass.length < 6) { setError('Le mot de passe doit contenir au moins 6 caractères.'); return; }
 
     setLoading(true);
     try {
       if (isRegistration) {
         if (trimPass !== confirm.trim()) { setError('Les mots de passe ne correspondent pas.'); return; }
-        await registerWithPhonePassword(fullBeninPhone(phone), trimPass);
+        await registerWithPhonePassword(normalizedPhone, trimPass);
       } else {
-        await loginWithPhonePassword(fullBeninPhone(phone), trimPass);
+        await loginWithPhonePassword(normalizedPhone, trimPass);
       }
       onSuccess();
     } catch (authError) {
@@ -101,31 +104,17 @@ export function PhoneAuthScreen({ onSuccess }: Props) {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <label className="block text-sm font-medium text-foreground">Numéro de téléphone</label>
-              <div className="flex overflow-hidden rounded-lg border border-border bg-background focus-within:ring-2 focus-within:ring-ring">
-                <div
-                  aria-label="Indicatif Bénin"
-                  className="flex shrink-0 items-center gap-2 border-r border-border bg-muted px-3 text-sm font-medium text-foreground"
-                >
-                  <span
-                    aria-hidden="true"
-                    className="grid h-3.5 w-5 grid-cols-[2fr_3fr] grid-rows-2 overflow-hidden rounded-[2px] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.12)]"
-                  >
-                    <span className="row-span-2 bg-[#008751]" />
-                    <span className="bg-[#fcd116]" />
-                    <span className="bg-[#e8112d]" />
-                  </span>
-                  <span>{BENIN_DIAL_CODE}</span>
-                </div>
-                <input
-                  type="tel"
-                  inputMode="tel"
-                  autoComplete="tel-national"
-                  placeholder="01 97 00 00 00"
-                  value={phone}
-                  onChange={(e) => { setPhone(formatBeninPhone(e.target.value)); setError(''); }}
-                  className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm outline-none"
-                />
-              </div>
+              <PhoneInput
+                value={phone}
+                onValueChange={(value) => { setPhone(value); setError(''); }}
+                defaultCountry="BJ"
+                placeholder="Entrez le numéro"
+                invalid={Boolean(error) && !isValidInternationalPhone(phone)}
+                className="h-11 rounded-lg bg-background"
+              >
+                <PhoneInputCountrySelect />
+                <PhoneInputField autoComplete="tel" />
+              </PhoneInput>
             </div>
 
             <div className="space-y-1.5">
