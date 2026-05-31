@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { AUTH_KEY, PIN_ENABLED_KEY, LAST_ACTIVE_KEY, LOCK_TIMEOUT_KEY } from '@/constants';
 import { PhoneAuthScreen } from '@/components/auth/PhoneAuthScreen';
 import { PinScreen } from '@/components/PinScreen';
+import { LandingPage } from '@/pages/LandingPage';
 import { AppDataProvider } from '@/context/AppDataContext';
 import { NavigationProvider } from '@/context/NavigationContext';
 import { AppShell } from '@/components/layout/AppShell';
@@ -10,6 +11,7 @@ import { logoutAuth } from '@/lib/auth';
 export function App() {
   const [authenticated, setAuthenticated] = useState(() => localStorage.getItem(AUTH_KEY) === 'true');
   const [locked, setLocked] = useState(false);
+  const [authMode, setAuthMode] = useState<'landing' | 'login' | 'register'>('landing');
 
   function logout() {
     void logoutAuth();
@@ -51,8 +53,21 @@ export function App() {
 
   // ── Couche 1 : auth complète ────────────────────────────────────
   if (!authenticated) {
+    if (authMode === 'landing') {
+      return (
+        <LandingPage
+          onLogin={() => setAuthMode('login')}
+          onRegister={() => setAuthMode('register')}
+        />
+      );
+    }
+
     return (
-      <PhoneAuthScreen onSuccess={() => setAuthenticated(true)} />
+      <PhoneAuthScreen
+        mode={authMode}
+        onModeChange={setAuthMode}
+        onSuccess={() => setAuthenticated(true)}
+      />
     );
   }
 
