@@ -1,5 +1,6 @@
 import {
   createUserWithEmailAndPassword,
+  deleteUser,
   linkWithCredential,
   signInWithEmailAndPassword,
   signOut,
@@ -136,7 +137,12 @@ export async function registerWithPhonePassword(phone: string, password: string,
     try {
       const result = await createUserWithEmailAndPassword(services.auth, phoneAuthEmail(phone), password);
       if (phoneCredential) {
-        await linkWithCredential(result.user, phoneCredential);
+        try {
+          await linkWithCredential(result.user, phoneCredential);
+        } catch (linkError) {
+          await deleteUser(result.user).catch(() => undefined);
+          throw linkError;
+        }
       }
       await persistFirebaseSession(result.user, phone, password);
       resetAppDataForNewAccount();
