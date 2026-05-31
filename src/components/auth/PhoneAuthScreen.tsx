@@ -7,34 +7,56 @@ import {
 } from '@/components/ui/phone-input';
 import { cn } from '@/lib/utils';
 import {
-  hasStoredAccount,
   isValidInternationalPhone,
   loginWithPhonePassword,
   normalizeInternationalPhone,
   registerWithPhonePassword,
 } from '@/lib/auth';
+import {
+  isPhoneOtpEnabled,
+  phoneVerificationCredential,
+  resetPhoneVerifier,
+  startPhoneVerification,
+} from '@/lib/phone-verification';
 
 const BG_IMAGES = ['/images/tailor_men.webp', '/images/tailor_women.webp'];
+const RECAPTCHA_CONTAINER_ID = 'tailora-phone-recaptcha';
 
-type Props = { onSuccess: () => void };
+type AuthMode = 'login' | 'register';
 
-export function PhoneAuthScreen({ onSuccess }: Props) {
-  const isRegistration = !hasStoredAccount();
+type Props = {
+  mode: AuthMode;
+  onModeChange: (mode: AuthMode | 'landing') => void;
+  onSuccess: () => void;
+};
+
+export function PhoneAuthScreen({ mode, onModeChange, onSuccess }: Props) {
+  const isRegistration = mode === 'register';
 
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [verificationId, setVerificationId] = useState('');
+  const [otpCode, setOtpCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
   const [imgIndex, setImgIndex] = useState(() => Math.floor(Math.random() * BG_IMAGES.length));
+
+  const otpEnabled = isRegistration && isPhoneOtpEnabled();
 
   useEffect(() => {
     const id = setInterval(() => setImgIndex((i) => (i + 1) % BG_IMAGES.length), 8000);
     return () => clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    setVerificationId('');
+    setOtpCode('');
+    setError('');
+    void resetPhoneVerifier();
+  }, [mode]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -51,14 +73,33 @@ export function PhoneAuthScreen({ onSuccess }: Props) {
     try {
       if (isRegistration) {
         if (trimPass !== confirm.trim()) { setError('Les mots de passe ne correspondent pas.'); return; }
-        await registerWithPhonePassword(normalizedPhone, trimPass);
+
+        if (otpEnabled && !verificationId) {
+          const nextVerificationId = await startPhoneVerification(normalizedPhone, RECAPTCHA_CONTAINER_ID);
+          setVerificationId(nextVerificationId);
+          return;
+        }
+
+        if (otpEnabled && otpCode.trim().length < 6) {
+          setError('Entrez le code reçu par SMS.');
+          return;
+        }
+
+        const credential = otpEnabled
+          ? phoneVerificationCredential(verificationId, otpCode.trim())
+          : undefined;
+
+        await registerWithPhonePassword(normalizedPhone, trimPass, credential);
       } else {
         await loginWithPhonePassword(normalizedPhone, trimPass);
       }
       onSuccess();
     } catch (authError) {
-      if ((authError as Error).message === 'INVALID_CREDENTIALS') {
+      const message = (authError as Error).message;
+      if (message === 'INVALID_CREDENTIALS') {
         setError('Numéro ou mot de passe incorrect.');
+      } else if (message === 'FIREBASE_NOT_CONFIGURED') {
+        setError('La vérification téléphone n’est pas encore configurée.');
       } else {
         setError('Impossible de se connecter pour le moment. Réessayez dans un instant.');
       }
@@ -94,6 +135,13 @@ export function PhoneAuthScreen({ onSuccess }: Props) {
             <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground">
               Tailora
             </h1>
+            <button
+              type="button"
+              onClick={() => onModeChange('landing')}
+              className="mt-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Retour
+            </button>
           </div>
 
           <div className="space-y-1">
@@ -106,7 +154,7 @@ export function PhoneAuthScreen({ onSuccess }: Props) {
               <label className="block text-sm font-medium text-foreground">Numéro de téléphone</label>
               <PhoneInput
                 value={phone}
-                onValueChange={(value) => { setPhone(value); setError(''); }}
+                onValueChange={(value) => { setPhone(value); setError(''); setVerificationId(''); setOtpCode(''); }}
                 defaultCountry="BJ"
                 placeholder="Entrez le numéro"
                 invalid={Boolean(error) && !isValidInternationalPhone(phone)}
@@ -163,6 +211,23 @@ export function PhoneAuthScreen({ onSuccess }: Props) {
               </div>
             )}
 
+            {otpEnabled && verificationId && (
+              <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-foreground">Code reçu par SMS</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  placeholder="123456"
+                  value={otpCode}
+                  onChange={(e) => { setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6)); setError(''); }}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+            )}
+
+            {otpEnabled && <div id={RECAPTCHA_CONTAINER_ID} />}
+
             {error && <p className="text-sm text-destructive">{error}</p>}
 
             <button
@@ -170,7 +235,21 @@ export function PhoneAuthScreen({ onSuccess }: Props) {
               disabled={loading}
               className="w-full rounded-full bg-foreground py-2.5 text-sm font-medium text-background transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading ? 'Veuillez patienter...' : isRegistration ? 'Créer mon compte' : 'Se connecter'}
+              {loading
+                ? 'Veuillez patienter...'
+                : otpEnabled && isRegistration && !verificationId
+                  ? 'Recevoir le code'
+                  : isRegistration
+                    ? 'Créer mon compte'
+                    : 'Se connecter'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onModeChange(isRegistration ? 'login' : 'register')}
+              className="w-full text-center text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {isRegistration ? 'J’ai déjà un compte' : 'Créer un nouveau compte'}
             </button>
           </form>
         </div>

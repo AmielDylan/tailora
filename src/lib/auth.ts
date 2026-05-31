@@ -1,9 +1,11 @@
 import {
   createUserWithEmailAndPassword,
+  linkWithCredential,
   signInWithEmailAndPassword,
   signOut,
   updatePassword,
   updateProfile,
+  type AuthCredential,
   type AuthError,
   type User,
 } from 'firebase/auth';
@@ -127,12 +129,15 @@ function resetAppDataForNewAccount() {
   localStorage.removeItem(STORAGE_KEY);
 }
 
-export async function registerWithPhonePassword(phone: string, password: string): Promise<AuthResult> {
+export async function registerWithPhonePassword(phone: string, password: string, phoneCredential?: AuthCredential): Promise<AuthResult> {
   const services = getFirebaseServices();
 
   if (services) {
     try {
       const result = await createUserWithEmailAndPassword(services.auth, phoneAuthEmail(phone), password);
+      if (phoneCredential) {
+        await linkWithCredential(result.user, phoneCredential);
+      }
       await persistFirebaseSession(result.user, phone, password);
       resetAppDataForNewAccount();
       markAuthenticated();
