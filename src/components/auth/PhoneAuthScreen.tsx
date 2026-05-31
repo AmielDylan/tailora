@@ -26,7 +26,7 @@ type AuthMode = 'login' | 'register';
 
 type Props = {
   mode: AuthMode;
-  onModeChange: (mode: AuthMode | 'landing') => void;
+  onModeChange: (mode: AuthMode) => void;
   onSuccess: () => void;
 };
 
@@ -141,13 +141,6 @@ export function PhoneAuthScreen({ mode, onModeChange, onSuccess }: Props) {
             <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground">
               Tailora
             </h1>
-            <button
-              type="button"
-              onClick={() => onModeChange('landing')}
-              className="mt-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Retour
-            </button>
           </div>
 
           <div className="space-y-1">
