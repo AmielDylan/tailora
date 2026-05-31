@@ -100,6 +100,12 @@ export function PhoneAuthScreen({ mode, onModeChange, onSuccess }: Props) {
         setError('Numéro ou mot de passe incorrect.');
       } else if (message === 'FIREBASE_NOT_CONFIGURED') {
         setError('La vérification téléphone n’est pas encore configurée.');
+      } else if ((authError as { code?: string }).code === 'auth/invalid-verification-code') {
+        setError('Code SMS incorrect.');
+      } else if ((authError as { code?: string }).code === 'auth/code-expired') {
+        setError('Code SMS expiré. Demandez un nouveau code.');
+        setVerificationId('');
+        setOtpCode('');
       } else {
         setError('Impossible de se connecter pour le moment. Réessayez dans un instant.');
       }
