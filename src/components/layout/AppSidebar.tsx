@@ -1,4 +1,4 @@
-import { LayoutDashboard, Lock, LogOut, Package, Scissors, User, Users } from 'lucide-react';
+import { LayoutDashboard, Lock, LogOut, Package, Scissors, Store, User, Users } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -10,6 +10,7 @@ import {
   SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { useAppDataContext } from '@/context/AppDataContext';
+import { useAccountContext } from '@/context/AccountContext';
 import { useNavigationContext } from '@/context/NavigationContext';
 import type { Route } from '@/hooks/useNavigation';
 
@@ -17,13 +18,16 @@ const NAV_ITEMS: { label: string; route: Route; icon: React.ElementType }[] = [
   { label: 'Tableau de bord', route: 'dashboard', icon: LayoutDashboard },
   { label: 'Commandes',       route: 'orders',    icon: Package  },
   { label: 'Clients',         route: 'clients',   icon: Users    },
+  { label: 'Atelier',         route: 'workshop',  icon: Store    },
 ];
 
 export function AppSidebar({ onLock, onLogout, pinEnabled }: { onLock: () => void; onLogout: () => void; pinEnabled: boolean }) {
   const { current, navigate } = useNavigationContext();
   const { orders, clients } = useAppDataContext();
+  const { profile, activeWorkshop } = useAccountContext();
 
   const activeSection = current.split('/')[0] as Route;
+  const workspaceLabel = activeWorkshop?.name ?? (profile ? `Carnet de ${profile.firstName}` : 'Carnet couture');
   const counters: Partial<Record<Route, number>> = {
     orders: orders.length,
     clients: clients.length,
@@ -40,7 +44,7 @@ export function AppSidebar({ onLock, onLogout, pinEnabled }: { onLock: () => voi
             <h1 className="truncate font-heading text-lg font-medium tracking-normal text-sidebar-foreground">
               Tailora
             </h1>
-            <p className="truncate text-xs text-muted-foreground">Atelier et commandes</p>
+            <p className="truncate text-xs text-muted-foreground">{workspaceLabel}</p>
           </div>
         </div>
       </SidebarHeader>

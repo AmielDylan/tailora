@@ -8,6 +8,7 @@ export type Route =
   | `orders/${string}/edit`
   | 'clients'
   | `clients/${string}`
+  | 'workshop'
   | 'profile';
 
 export function useNavigation() {
