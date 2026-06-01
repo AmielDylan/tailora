@@ -1,9 +1,17 @@
 import { initializeApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
+import {
+  getFirestore,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  type Firestore,
+} from 'firebase/firestore';
 
 type FirebaseServices = {
   app: FirebaseApp;
   auth: Auth;
+  db: Firestore;
 };
 
 let services: FirebaseServices | null = null;
@@ -25,9 +33,19 @@ export function getFirebaseServices(): FirebaseServices | null {
   }
 
   const app = initializeApp(firebaseConfig);
+  let db: Firestore;
+  try {
+    db = initializeFirestore(app, {
+      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+    });
+  } catch {
+    db = getFirestore(app);
+  }
+
   services = {
     app,
     auth: getAuth(app),
+    db,
   };
 
   return services;

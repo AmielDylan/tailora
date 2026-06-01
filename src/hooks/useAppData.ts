@@ -2,30 +2,109 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Client, Order, Status } from '@/types';
 import { STATUSES } from '@/constants';
 import { today, isLate, balance } from '@/helpers';
-import { loadState, saveState } from '@/lib/storage';
+import {
+  hasAppData,
+  loadStateRecord,
+  saveRemoteState,
+  saveState,
+  subscribeRemoteState,
+  type AppState,
+} from '@/lib/storage';
+import { getFirebaseServices } from '@/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 export type OrderFilter = 'Tous' | Status | 'Actives' | 'En retard' | 'Soldes dus';
 
 export function useAppData() {
-  const [clients, setClients] = useState<Client[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
+  const initialRecord = useRef(loadStateRecord());
+  const [clients, setClients] = useState<Client[]>(() => initialRecord.current.state.clients);
+  const [orders, setOrders] = useState<Order[]>(() => initialRecord.current.state.orders);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<OrderFilter>('Tous');
-  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(
+    () => initialRecord.current.state.clients[0]?.id ?? null,
+  );
   const [toast, setToast] = useState('');
   const initialized = useRef(false);
+  const currentUid = useRef<string | null>(null);
+  const latestState = useRef<AppState>({ clients: [], orders: [] });
+  const localUpdatedAt = useRef('');
+  const skipNextPersist = useRef(false);
 
-  useEffect(() => {
-    const state = loadState();
+  function applyRemoteState(state: AppState, updatedAt: string) {
+    skipNextPersist.current = true;
+    latestState.current = state;
+    localUpdatedAt.current = updatedAt;
+    saveState(state, updatedAt);
     setClients(state.clients);
     setOrders(state.orders);
     setSelectedClientId(state.clients[0]?.id ?? null);
+  }
+
+  useEffect(() => {
+    const { state, updatedAt } = initialRecord.current;
+    latestState.current = state;
+    localUpdatedAt.current = updatedAt;
     initialized.current = true;
+
+    const services = getFirebaseServices();
+    if (!services) return;
+
+    let unsubscribeRemote: (() => void) | null = null;
+    const unsubscribeAuth = onAuthStateChanged(services.auth, (user) => {
+      unsubscribeRemote?.();
+      unsubscribeRemote = null;
+      currentUid.current = user?.uid ?? null;
+      if (!user) return;
+
+      unsubscribeRemote = subscribeRemoteState(user.uid, (remote) => {
+        const local = latestState.current;
+        if (!remote) {
+          if (hasAppData(local)) void saveRemoteState(user.uid, local, localUpdatedAt.current || undefined);
+          return;
+        }
+
+        const localHasNewerData =
+          hasAppData(local) &&
+          Boolean(localUpdatedAt.current) &&
+          (!remote.updatedAt || localUpdatedAt.current > remote.updatedAt);
+
+        if (localHasNewerData) {
+          void saveRemoteState(user.uid, local, localUpdatedAt.current);
+          return;
+        }
+
+        applyRemoteState(remote.state, remote.updatedAt);
+      }, () => {
+        currentUid.current = null;
+      });
+    });
+
+    return () => {
+      unsubscribeRemote?.();
+      unsubscribeAuth();
+    };
   }, []);
 
   useEffect(() => {
     if (!initialized.current) return;
-    saveState({ clients, orders });
+    const state = { clients, orders };
+    latestState.current = state;
+
+    if (skipNextPersist.current) {
+      skipNextPersist.current = false;
+      return;
+    }
+
+    const updatedAt = saveState(state);
+    localUpdatedAt.current = updatedAt;
+
+    if (!currentUid.current) return;
+    const syncTimer = window.setTimeout(() => {
+      if (currentUid.current) void saveRemoteState(currentUid.current, state, updatedAt);
+    }, 300);
+
+    return () => window.clearTimeout(syncTimer);
   }, [clients, orders]);
 
   const filteredOrders = useMemo(() => {

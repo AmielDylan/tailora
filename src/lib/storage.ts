@@ -1,7 +1,20 @@
 import { STORAGE_KEY, defaultMeasurements } from '@/constants';
 import type { Client, Garment, Measurement, Order } from '@/types';
+import { getFirebaseServices } from '@/lib/firebase';
+import {
+  doc,
+  onSnapshot,
+  setDoc,
+  type FirestoreError,
+  type Unsubscribe,
+} from 'firebase/firestore';
 
 export type AppState = { clients: Client[]; orders: Order[] };
+export type StoredAppState = AppState & { schemaVersion?: number; updatedAt?: string };
+export type RemoteAppState = { state: AppState; updatedAt: string };
+
+const FIRESTORE_STATE_PATH = ['state', 'app'] as const;
+const STATE_SCHEMA_VERSION = 1;
 
 function copyMeasurements(measurements?: Measurement[]): Measurement[] {
   const source = measurements?.length ? measurements : defaultMeasurements;
@@ -33,20 +46,83 @@ function normalizeOrder(order: Order): Order {
   };
 }
 
-export function loadState(): AppState {
+function normalizeState(state: Partial<AppState>): AppState {
+  return {
+    clients: state.clients ?? [],
+    orders: (state.orders ?? []).map(normalizeOrder),
+  };
+}
+
+function nowIso() {
+  return new Date().toISOString();
+}
+
+export function hasAppData(state: AppState) {
+  return state.clients.length > 0 || state.orders.length > 0;
+}
+
+export function loadStateRecord(): RemoteAppState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { clients: [], orders: [] };
-    const parsed = JSON.parse(raw) as Partial<AppState>;
+    if (!raw) return { state: { clients: [], orders: [] }, updatedAt: '' };
+    const parsed = JSON.parse(raw) as Partial<StoredAppState>;
     return {
-      clients: parsed.clients ?? [],
-      orders: (parsed.orders ?? []).map(normalizeOrder),
+      state: normalizeState(parsed),
+      updatedAt: parsed.updatedAt ?? '',
     };
   } catch {
-    return { clients: [], orders: [] };
+    return { state: { clients: [], orders: [] }, updatedAt: '' };
   }
 }
 
-export function saveState(state: AppState): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+export function loadState(): AppState {
+  return loadStateRecord().state;
+}
+
+export function saveState(state: AppState, updatedAt = nowIso()): string {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    ...state,
+    schemaVersion: STATE_SCHEMA_VERSION,
+    updatedAt,
+  }));
+  return updatedAt;
+}
+
+function remoteStateRef(uid: string) {
+  const services = getFirebaseServices();
+  if (!services) return null;
+  return doc(services.db, 'users', uid, ...FIRESTORE_STATE_PATH);
+}
+
+export function subscribeRemoteState(
+  uid: string,
+  onChange: (state: RemoteAppState | null) => void,
+  onError?: (error: FirestoreError) => void,
+): Unsubscribe | null {
+  const ref = remoteStateRef(uid);
+  if (!ref) return null;
+
+  return onSnapshot(ref, (snapshot) => {
+    if (!snapshot.exists()) {
+      onChange(null);
+      return;
+    }
+
+    const data = snapshot.data() as Partial<StoredAppState>;
+    onChange({
+      state: normalizeState(data),
+      updatedAt: data.updatedAt ?? '',
+    });
+  }, onError);
+}
+
+export async function saveRemoteState(uid: string, state: AppState, updatedAt = nowIso()) {
+  const ref = remoteStateRef(uid);
+  if (!ref) return;
+
+  await setDoc(ref, {
+    ...state,
+    schemaVersion: STATE_SCHEMA_VERSION,
+    updatedAt,
+  }, { merge: true });
 }

@@ -31,6 +31,27 @@ Les regles publiees limitent l'acces aux documents situes sous `users/{uid}/...`
 - un utilisateur connecte peut lire et ecrire uniquement son propre espace `users/{uid}`;
 - tout autre document est refuse par defaut.
 
+## Synchronisation offline-first
+
+Les donnees metier Tailora sont synchronisees dans Firestore sous :
+
+```txt
+users/{uid}/state/app
+```
+
+Le document contient les `clients`, les `orders`, un `schemaVersion` et un `updatedAt`.
+
+Comportement applicatif :
+
+- au demarrage, Tailora charge d'abord le cache local `localStorage` pour rester utilisable immediatement ;
+- quand Firebase Auth fournit un `uid`, l'application ecoute `users/{uid}/state/app` ;
+- si Firestore contient deja des donnees plus recentes, elles remplacent le cache local ;
+- si Firestore est vide et que le navigateur a deja des donnees locales, Tailora les pousse vers Firestore ;
+- a chaque modification client/commande, Tailora ecrit dans `localStorage` puis dans Firestore ;
+- avec le cache persistant Firestore Web, les ecritures hors-ligne sont conservees localement et synchronisees quand la connexion revient.
+
+Le cache Firestore persistant est initialise avec `persistentLocalCache` et un gestionnaire multi-onglets.
+
 ## Authentification telephone
 
 Le MVP utilise une connexion numero international + mot de passe. L'OTP SMS Firebase est prepare dans le code, mais reste desactive tant que `VITE_FIREBASE_PHONE_OTP_ENABLED=false`.
