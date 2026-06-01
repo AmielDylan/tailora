@@ -36,6 +36,7 @@ PWA mobile-first pour remplacer le cahier papier d'un couturier. Un seul utilisa
   gh pr create --base main --head develop --title "..." --body "..."
   gh pr merge --auto --merge
   ```
+- Le déploiement Vercel de l'UI part de `main` : une feature doit donc être mergée en `--no-ff` dans `develop`, poussée, puis intégrée à `main` via PR.
 
 ## Commandes
 

@@ -28,7 +28,7 @@ export function OrderListPage() {
           <EmptyState
             imageSrc="/images/empty-states/orders.png"
             title="Aucune commande"
-            subtitle="Créez la première commande pour commencer le carnet de l'atelier."
+            subtitle="Créez la première commande pour commencer votre carnet de couture."
             action={{ label: 'Nouvelle commande', onClick: () => nav.push('orders/new') }}
             className="bg-card"
           />

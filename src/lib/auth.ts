@@ -7,7 +7,14 @@ import {
   type AuthError,
   type User,
 } from 'firebase/auth';
-import { AUTH_KEY, CREDENTIALS_KEY, STORAGE_KEY } from '@/constants';
+import {
+  ACTIVE_WORKSHOP_ID_KEY,
+  AUTH_KEY,
+  CREDENTIALS_KEY,
+  STORAGE_KEY,
+  USER_PROFILE_KEY,
+  WORKSHOPS_KEY,
+} from '@/constants';
 import { getFirebaseServices } from '@/lib/firebase';
 
 const PHONE_EMAIL_DOMAIN = 'phone.tailora.app';
@@ -125,6 +132,9 @@ function markAuthenticated() {
 
 function resetAppDataForNewAccount() {
   localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(USER_PROFILE_KEY);
+  localStorage.removeItem(WORKSHOPS_KEY);
+  localStorage.removeItem(ACTIVE_WORKSHOP_ID_KEY);
 }
 
 export async function registerWithPhonePassword(phone: string, password: string): Promise<AuthResult> {

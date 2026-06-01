@@ -6,6 +6,7 @@ import { OrderDetailPage } from '@/pages/OrderDetailPage';
 import { OrderEditPage } from '@/pages/OrderEditPage';
 import { ClientListPage } from '@/pages/ClientListPage';
 import { ClientDetailPage } from '@/pages/ClientDetailPage';
+import { WorkshopPage } from '@/pages/WorkshopPage';
 import { ProfilePage } from '@/pages/ProfilePage';
 
 export function PageRouter({ onLock: _onLock }: { onLock: () => void }) {
@@ -26,6 +27,8 @@ export function PageRouter({ onLock: _onLock }: { onLock: () => void }) {
     const clientId = current.split('/')[1];
     return <ClientDetailPage clientId={clientId} />;
   }
+
+  if (current === 'workshop') return <WorkshopPage />;
 
   if (current === 'profile') return <ProfilePage />;
 

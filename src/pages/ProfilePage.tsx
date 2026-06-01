@@ -8,6 +8,9 @@ import {
   AUTH_KEY,
   LAST_ACTIVE_KEY,
   STORAGE_KEY,
+  USER_PROFILE_KEY,
+  WORKSHOPS_KEY,
+  ACTIVE_WORKSHOP_ID_KEY,
 } from '@/constants';
 import { PageHeader } from '@/components/layout/PageHeader';
 import {
@@ -20,6 +23,7 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { updateCurrentPassword } from '@/lib/auth';
+import { useAccountContext } from '@/context/AccountContext';
 
 type Credentials = {
   phone: string;
@@ -139,7 +143,11 @@ function InlinePinCreate({ onCreated, onCancel }: { onCreated: () => void; onCan
 
 export function ProfilePage() {
   const storedCreds = JSON.parse(localStorage.getItem(CREDENTIALS_KEY) ?? '{}') as Partial<Credentials>;
+  const { profile, saveProfile } = useAccountContext();
 
+  const [firstName, setFirstName] = useState(profile?.firstName ?? '');
+  const [lastName, setLastName] = useState(profile?.lastName ?? '');
+  const [profileMsg, setProfileMsg] = useState('');
   const [phone, setPhone] = useState(storedCreds.phone ?? '');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -151,6 +159,21 @@ export function ProfilePage() {
   const [showPinCreate, setShowPinCreate] = useState(false);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
+
+  function savePersonalProfile(e: React.FormEvent) {
+    e.preventDefault();
+    setProfileMsg('');
+
+    const trimFirstName = firstName.trim();
+    const trimLastName = lastName.trim();
+    if (!trimFirstName || !trimLastName) {
+      setProfileMsg('Le prénom et le nom sont requis.');
+      return;
+    }
+
+    saveProfile({ firstName: trimFirstName, lastName: trimLastName });
+    setProfileMsg('Profil mis à jour.');
+  }
 
   async function saveIdentity(e: React.FormEvent) {
     e.preventDefault();
@@ -169,7 +192,7 @@ export function ProfilePage() {
       try {
         await updateCurrentPassword(newPassword.trim());
       } catch {
-        setIdentityMsg('Impossible de mettre Ã  jour le mot de passe pour le moment.');
+        setIdentityMsg('Impossible de mettre à jour le mot de passe pour le moment.');
         return;
       }
     }
@@ -214,6 +237,9 @@ export function ProfilePage() {
     localStorage.removeItem(LOCK_TIMEOUT_KEY);
     localStorage.removeItem(LAST_ACTIVE_KEY);
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(USER_PROFILE_KEY);
+    localStorage.removeItem(WORKSHOPS_KEY);
+    localStorage.removeItem(ACTIVE_WORKSHOP_ID_KEY);
     window.location.reload();
   }
 
@@ -222,9 +248,43 @@ export function ProfilePage() {
       <PageHeader title="Profil" />
       <div className="mx-auto max-w-lg px-4 py-6 space-y-6">
 
-        {/* Section identité */}
         <section className="rounded-xl border border-border bg-card p-5 space-y-4">
-          <h3 className="text-sm font-semibold text-foreground">Identité</h3>
+          <h3 className="text-sm font-semibold text-foreground">Profil personnel</h3>
+          <form onSubmit={savePersonalProfile} className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-foreground">Prénom</label>
+                <input
+                  value={firstName}
+                  onChange={(e) => { setFirstName(e.target.value); setProfileMsg(''); }}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-foreground">Nom</label>
+                <input
+                  value={lastName}
+                  onChange={(e) => { setLastName(e.target.value); setProfileMsg(''); }}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+            </div>
+            {profileMsg && (
+              <p className={`text-sm ${profileMsg.includes('mis à jour') ? 'text-muted-foreground' : 'text-destructive'}`}>
+                {profileMsg}
+              </p>
+            )}
+            <button
+              type="submit"
+              className="w-full rounded-full bg-foreground py-2 text-sm font-medium text-background transition-opacity hover:opacity-80"
+            >
+              Enregistrer le profil
+            </button>
+          </form>
+        </section>
+
+        <section className="rounded-xl border border-border bg-card p-5 space-y-4">
+          <h3 className="text-sm font-semibold text-foreground">Connexion</h3>
           <form onSubmit={saveIdentity} className="space-y-3">
             <div className="space-y-1.5">
               <label className="block text-sm font-medium text-foreground">Numéro de téléphone</label>
