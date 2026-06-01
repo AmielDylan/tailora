@@ -1,6 +1,25 @@
 export type Status = 'Reçue' | 'En cours' | 'Terminée' | 'Livrée';
 export type View = 'dashboard' | 'orders' | 'clients';
 
+export type UserProfile = {
+  firstName: string;
+  lastName: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type Workshop = {
+  id: string;
+  name: string;
+  address?: string;
+  professionalPhone?: string;
+  openingDays?: string;
+  coverImage?: string;
+  profileImage?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type Measurement = {
   id: string;
   label: string;

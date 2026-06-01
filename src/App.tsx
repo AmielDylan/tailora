@@ -3,9 +3,27 @@ import { AUTH_KEY, PIN_ENABLED_KEY, LAST_ACTIVE_KEY, LOCK_TIMEOUT_KEY } from '@/
 import { PhoneAuthScreen } from '@/components/auth/PhoneAuthScreen';
 import { PinScreen } from '@/components/PinScreen';
 import { AppDataProvider } from '@/context/AppDataContext';
+import { AccountProvider, useAccountContext } from '@/context/AccountContext';
 import { NavigationProvider } from '@/context/NavigationContext';
 import { AppShell } from '@/components/layout/AppShell';
+import { WelcomeProfileScreen } from '@/components/onboarding/WelcomeProfileScreen';
 import { logoutAuth } from '@/lib/auth';
+
+function AuthenticatedApp({ onLock, onLogout, pinEnabled }: { onLock: () => void; onLogout: () => void; pinEnabled: boolean }) {
+  const { profile } = useAccountContext();
+
+  if (!profile) return <WelcomeProfileScreen />;
+
+  return (
+    <NavigationProvider>
+      <AppShell
+        onLock={onLock}
+        onLogout={onLogout}
+        pinEnabled={pinEnabled}
+      />
+    </NavigationProvider>
+  );
+}
 
 export function App() {
   const [authenticated, setAuthenticated] = useState(() => localStorage.getItem(AUTH_KEY) === 'true');
@@ -74,13 +92,13 @@ export function App() {
 
   return (
     <AppDataProvider>
-      <NavigationProvider>
-        <AppShell
+      <AccountProvider>
+        <AuthenticatedApp
           onLock={() => setLocked(true)}
           onLogout={logout}
           pinEnabled={localStorage.getItem(PIN_ENABLED_KEY) === 'true'}
         />
-      </NavigationProvider>
+      </AccountProvider>
     </AppDataProvider>
   );
 }
