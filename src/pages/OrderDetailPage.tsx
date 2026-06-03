@@ -6,6 +6,7 @@ import { useAppDataContext } from '@/context/AppDataContext';
 import { useNavigationContext } from '@/context/NavigationContext';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { PageContent } from '@/components/layout/PageContent';
 import { StatusBadge } from '@/components/StatusBadge';
 import { MeasurementsSummary } from '@/components/MeasurementsSummary';
 import { GarmentsSummary } from '@/components/GarmentsSummary';
@@ -29,7 +30,9 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
     return (
       <>
         <PageHeader title="Commande introuvable" />
-        <div className="p-6 text-sm text-muted-foreground">Cette commande n'existe pas.</div>
+        <PageContent>
+          <p className="text-sm text-muted-foreground">Cette commande n'existe pas.</p>
+        </PageContent>
       </>
     );
   }
@@ -59,7 +62,7 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
         }
       />
 
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 p-4 pb-8 lg:p-6">
+      <PageContent variant="form" className="max-w-6xl gap-4 pb-8">
         <div className="flex flex-col gap-1 md:hidden">
           <h1 className="text-lg font-medium tracking-normal text-foreground">{order.clientName}</h1>
           <p className="text-sm text-muted-foreground">Livraison prévue le {dateLabel(order.deliveryAt)}</p>
@@ -149,7 +152,7 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
             </Button>
           </aside>
         </div>
-      </div>
+      </PageContent>
     </>
   );
 }

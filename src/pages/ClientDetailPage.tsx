@@ -1,6 +1,7 @@
 import { useAppDataContext } from '@/context/AppDataContext';
 import { useNavigationContext } from '@/context/NavigationContext';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { PageContent } from '@/components/layout/PageContent';
 import { StatusBadge } from '@/components/StatusBadge';
 import { currency, balance, dateLabel } from '@/helpers';
 
@@ -17,7 +18,9 @@ export function ClientDetailPage({ clientId }: { clientId: string }) {
     return (
       <>
         <PageHeader title="Client introuvable" />
-        <div className="p-6 text-sm text-muted-foreground">Ce client n'existe pas.</div>
+        <PageContent>
+          <p className="text-sm text-muted-foreground">Ce client n'existe pas.</p>
+        </PageContent>
       </>
     );
   }
@@ -29,7 +32,7 @@ export function ClientDetailPage({ clientId }: { clientId: string }) {
   return (
     <>
       <PageHeader title={client.name} />
-      <div className="mx-auto max-w-xl space-y-5 px-4 py-6">
+      <PageContent variant="narrow">
 
         {/* Header info */}
         <div className="space-y-3 rounded-xl border border-border bg-card p-4">
@@ -99,7 +102,7 @@ export function ClientDetailPage({ clientId }: { clientId: string }) {
           )}
         </div>
 
-      </div>
+      </PageContent>
     </>
   );
 }

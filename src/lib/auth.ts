@@ -37,6 +37,19 @@ export type AuthResult = {
   user?: User;
 };
 
+export type AuthFailureCode =
+  | 'ACCOUNT_NOT_FOUND'
+  | 'WRONG_PASSWORD'
+  | 'PHONE_ALREADY_REGISTERED'
+  | 'TOO_MANY_ATTEMPTS'
+  | 'NETWORK_ERROR'
+  | 'FIREBASE_NOT_CONFIGURED'
+  | 'INVALID_CREDENTIALS';
+
+export function authFailure(code: AuthFailureCode) {
+  return new Error(code);
+}
+
 export function internationalPhoneDigits(value: string) {
   return value.replace(/\D/g, '');
 }
@@ -69,6 +82,10 @@ function isFirebaseUnavailable(error: unknown) {
     code === 'auth/api-key-not-valid.-please-pass-a-valid-api-key.' ||
     code === 'auth/invalid-api-key'
   );
+}
+
+function firebaseAuthCode(error: unknown) {
+  return (error as Partial<AuthError>)?.code;
 }
 
 function readStoredCredentials(): StoredCredentials | null {
@@ -159,6 +176,12 @@ export async function registerWithPhonePassword(phone: string, password: string,
       markAuthenticated();
       return { provider: 'firebase', user: result.user };
     } catch (error) {
+      const code = firebaseAuthCode(error);
+      if (code === 'auth/email-already-in-use') throw authFailure('PHONE_ALREADY_REGISTERED');
+      if (code === 'auth/too-many-requests') throw authFailure('TOO_MANY_ATTEMPTS');
+      if (code === 'auth/network-request-failed') {
+        if (await localPasswordMatches(phone, password)) throw authFailure('PHONE_ALREADY_REGISTERED');
+      }
       if (!isFirebaseUnavailable(error)) throw error;
     }
   }
@@ -179,14 +202,20 @@ export async function loginWithPhonePassword(phone: string, password: string): P
       markAuthenticated();
       return { provider: 'firebase', user: result.user };
     } catch (error) {
+      const code = firebaseAuthCode(error);
       const canMigrateLocalAccount =
-        (error as Partial<AuthError>)?.code === 'auth/invalid-credential' ||
-        (error as Partial<AuthError>)?.code === 'auth/user-not-found';
+        code === 'auth/invalid-credential' ||
+        code === 'auth/user-not-found';
 
       if (canMigrateLocalAccount && await localPasswordMatches(phone, password)) {
         return registerWithPhonePassword(phone, password);
       }
 
+      if (code === 'auth/user-not-found') throw authFailure('ACCOUNT_NOT_FOUND');
+      if (code === 'auth/wrong-password') throw authFailure('WRONG_PASSWORD');
+      if (code === 'auth/invalid-credential') throw authFailure('INVALID_CREDENTIALS');
+      if (code === 'auth/too-many-requests') throw authFailure('TOO_MANY_ATTEMPTS');
+      if (code === 'auth/network-request-failed') throw authFailure('NETWORK_ERROR');
       if (!isFirebaseUnavailable(error)) throw error;
     }
   }
@@ -197,7 +226,9 @@ export async function loginWithPhonePassword(phone: string, password: string): P
     return { provider: 'local' };
   }
 
-  throw new Error('INVALID_CREDENTIALS');
+  const stored = readStoredCredentials();
+  if (!stored) throw authFailure('ACCOUNT_NOT_FOUND');
+  throw authFailure('WRONG_PASSWORD');
 }
 
 export async function updateCurrentPassword(newPassword: string): Promise<void> {

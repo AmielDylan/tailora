@@ -13,6 +13,7 @@ import {
   ACTIVE_WORKSHOP_ID_KEY,
 } from '@/constants';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { PageContent } from '@/components/layout/PageContent';
 import {
   Dialog,
   DialogContent,
@@ -246,7 +247,7 @@ export function ProfilePage() {
   return (
     <>
       <PageHeader title="Profil" />
-      <div className="mx-auto max-w-lg px-4 py-6 space-y-6">
+      <PageContent variant="narrow" className="max-w-lg gap-6">
 
         <section className="rounded-xl border border-border bg-card p-5 space-y-4">
           <h3 className="text-sm font-semibold text-foreground">Profil personnel</h3>
@@ -420,7 +421,7 @@ export function ProfilePage() {
             Supprimer mon profil
           </button>
         </section>
-      </div>
+      </PageContent>
 
       {/* Delete confirmation */}
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>

@@ -3,6 +3,7 @@ import { useAppDataContext } from '@/context/AppDataContext';
 import { useNavigationContext } from '@/context/NavigationContext';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { PageContent } from '@/components/layout/PageContent';
 import { OrdersDataTable } from '@/components/orders/OrdersDataTable';
 import { EmptyState } from '@/components/shared/EmptyState';
 
@@ -23,7 +24,7 @@ export function OrderListPage() {
         }
       />
 
-      <div className="flex flex-col gap-4 p-4 pb-24 lg:p-6">
+      <PageContent>
         {orders.length === 0 ? (
           <EmptyState
             imageSrc="/images/empty-states/orders.png"
@@ -39,7 +40,7 @@ export function OrderListPage() {
             onOpen={(orderId) => nav.push(`orders/${orderId}`)}
           />
         )}
-      </div>
+      </PageContent>
     </>
   );
 }

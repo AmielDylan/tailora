@@ -372,6 +372,18 @@ function formatPhoneNumber(value: string, countries: Country[]): string {
   return formatted;
 }
 
+function applyCountryDialCode(value: string, country: Country, countries: Country[]): string {
+  const digits = value.replace(/\D/g, "");
+  if (!digits) return country.dialCode;
+
+  const detected = detectCountryFromNumber(value.startsWith("+") ? value : `+${digits}`, countries);
+  const rest = detected
+    ? digits.slice(detected.dialCode.slice(1).length)
+    : digits;
+
+  return `${country.dialCode}${rest}`;
+}
+
 type RootElement = React.ComponentRef<typeof PhoneInput>;
 
 interface StoreState {
@@ -701,6 +713,8 @@ function PhoneInputCountrySelect(props: PhoneInputCountrySelectProps) {
                   value={`${c.name} ${c.dialCode} ${c.code}`}
                   onSelect={() => {
                     store.setState("country", c.code);
+                    store.setState("startsWithPlus", true);
+                    store.setState("value", applyCountryDialCode(store.getState().value, c, countries));
                     store.setState("open", false);
                     requestAnimationFrame(() => {
                       inputRef.current?.focus();
