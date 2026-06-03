@@ -1,5 +1,6 @@
 import { useNavigationContext } from '@/context/NavigationContext';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { PageContent } from '@/components/layout/PageContent';
 import { OrderForm } from '@/components/forms/OrderForm';
 
 export function OrderNewPage() {
@@ -7,12 +8,12 @@ export function OrderNewPage() {
   return (
     <>
       <PageHeader title="Nouvelle commande" />
-      <div className="mx-auto max-w-5xl px-4 py-6">
+      <PageContent variant="form">
         <OrderForm
           onSave={() => nav.navigate('orders')}
           onCancel={() => nav.pop()}
         />
-      </div>
+      </PageContent>
     </>
   );
 }

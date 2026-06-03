@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input';
 import { useAppDataContext } from '@/context/AppDataContext';
 import { useNavigationContext } from '@/context/NavigationContext';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { PageContent } from '@/components/layout/PageContent';
 import { EmptyState } from '@/components/shared/EmptyState';
 import type { Client } from '@/types';
 
@@ -131,7 +132,7 @@ export function ClientListPage() {
   return (
     <>
       <PageHeader title="Clients" subtitle={`${clients.length} fiche${clients.length > 1 ? 's' : ''} client`} />
-      <div className="flex flex-col gap-4 p-4 lg:p-6">
+      <PageContent>
         {clients.length === 0 ? (
           <EmptyState
             icon={Users}
@@ -190,7 +191,7 @@ export function ClientListPage() {
             </div>
           </>
         )}
-      </div>
+      </PageContent>
 
       {/* Delete confirmation dialog */}
       <Dialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>

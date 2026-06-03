@@ -30,6 +30,21 @@ type Props = {
   onSuccess: () => void;
 };
 
+function authMessage(code: string, isRegistration: boolean) {
+  if (code === 'ACCOUNT_NOT_FOUND') return 'Aucun compte ne correspond à ce numéro.';
+  if (code === 'WRONG_PASSWORD') return 'Le mot de passe saisi est incorrect.';
+  if (code === 'PHONE_ALREADY_REGISTERED') return 'Un compte existe déjà avec ce numéro. Connectez-vous plutôt.';
+  if (code === 'TOO_MANY_ATTEMPTS') return 'Trop de tentatives. Patientez quelques minutes avant de réessayer.';
+  if (code === 'NETWORK_ERROR') return 'Connexion impossible. Vérifiez internet puis réessayez.';
+  if (code === 'FIREBASE_NOT_CONFIGURED') return 'La vérification téléphone n’est pas encore configurée.';
+  if (code === 'auth/invalid-verification-code') return 'Code SMS incorrect.';
+  if (code === 'auth/code-expired') return 'Code SMS expiré. Demandez un nouveau code.';
+  if (code === 'INVALID_CREDENTIALS') return 'Numéro ou mot de passe incorrect.';
+  return isRegistration
+    ? 'Impossible de créer le compte pour le moment. Réessayez dans un instant.'
+    : 'Impossible de se connecter pour le moment. Réessayez dans un instant.';
+}
+
 export function PhoneAuthScreen({ mode, onModeChange, onSuccess }: Props) {
   const isRegistration = mode === 'register';
 
@@ -95,19 +110,11 @@ export function PhoneAuthScreen({ mode, onModeChange, onSuccess }: Props) {
       }
       onSuccess();
     } catch (authError) {
-      const message = (authError as Error).message;
-      if (message === 'INVALID_CREDENTIALS') {
-        setError('Numéro ou mot de passe incorrect.');
-      } else if (message === 'FIREBASE_NOT_CONFIGURED') {
-        setError('La vérification téléphone n’est pas encore configurée.');
-      } else if ((authError as { code?: string }).code === 'auth/invalid-verification-code') {
-        setError('Code SMS incorrect.');
-      } else if ((authError as { code?: string }).code === 'auth/code-expired') {
-        setError('Code SMS expiré. Demandez un nouveau code.');
+      const code = (authError as { code?: string }).code ?? (authError as Error).message;
+      setError(authMessage(code, isRegistration));
+      if (code === 'auth/code-expired') {
         setVerificationId('');
         setOtpCode('');
-      } else {
-        setError('Impossible de se connecter pour le moment. Réessayez dans un instant.');
       }
     } finally {
       setLoading(false);

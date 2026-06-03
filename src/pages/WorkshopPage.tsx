@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { PageContent } from '@/components/layout/PageContent';
 import { useAccountContext } from '@/context/AccountContext';
 
 export function WorkshopPage() {
@@ -40,7 +41,7 @@ export function WorkshopPage() {
         title="Atelier"
         subtitle={activeWorkshop ? activeWorkshop.name : 'Créez un espace atelier quand vous en avez besoin'}
       />
-      <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-4 pb-24 lg:p-6">
+      <PageContent variant="narrow" className="max-w-2xl gap-6">
         <section className="space-y-2 border-b border-border pb-5">
           <h2 className="font-heading text-2xl font-medium tracking-[-0.6px] text-foreground">
             {activeWorkshop ? 'Informations de l’atelier' : 'Créer un atelier'}
@@ -103,7 +104,7 @@ export function WorkshopPage() {
             {activeWorkshop ? 'Enregistrer' : 'Créer l’atelier'}
           </Button>
         </form>
-      </div>
+      </PageContent>
     </>
   );
 }
