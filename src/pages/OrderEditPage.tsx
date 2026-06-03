@@ -1,5 +1,6 @@
 import { useNavigationContext } from '@/context/NavigationContext';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { PageContent } from '@/components/layout/PageContent';
 import { OrderForm } from '@/components/forms/OrderForm';
 
 export function OrderEditPage({ orderId }: { orderId: string }) {
@@ -7,13 +8,13 @@ export function OrderEditPage({ orderId }: { orderId: string }) {
   return (
     <>
       <PageHeader title="Modifier la commande" />
-      <div className="mx-auto max-w-5xl px-4 py-6">
+      <PageContent variant="form">
         <OrderForm
           orderId={orderId}
           onSave={() => nav.pop()}
           onCancel={() => nav.pop()}
         />
-      </div>
+      </PageContent>
     </>
   );
 }

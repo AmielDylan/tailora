@@ -20,12 +20,17 @@ export function EmptyState({ icon: Icon, imageSrc, imageAlt = '', title, subtitl
       )}
     >
       {imageSrc ? (
-        <img
-          src={imageSrc}
-          alt={imageAlt}
-          className="h-40 w-40 rounded-md object-contain opacity-95 sm:h-48 sm:w-48"
-          loading="lazy"
-        />
+        <div className="flex h-40 w-40 shrink-0 items-center justify-center sm:h-48 sm:w-48">
+          <img
+            src={imageSrc}
+            alt={imageAlt}
+            width={192}
+            height={192}
+            className="h-full w-full rounded-md object-contain opacity-95"
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
       ) : (
         Icon && <Icon className="h-8 w-8 text-muted-foreground/40" strokeWidth={1.5} />
       )}

@@ -19,7 +19,7 @@ export function PageHeader({ title, subtitle, right, className, titleClassName, 
   return (
     <header
       className={cn(
-        'sticky top-0 z-20 flex min-h-16 shrink-0 items-center gap-3 border-b border-border bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/85',
+        'sticky top-0 z-20 flex min-h-16 shrink-0 items-center gap-3 border-b border-border bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/85 lg:px-6',
         className,
       )}
     >
