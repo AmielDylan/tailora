@@ -4,6 +4,7 @@ import { OrderListPage } from '@/pages/OrderListPage';
 import { OrderNewPage } from '@/pages/OrderNewPage';
 import { OrderDetailPage } from '@/pages/OrderDetailPage';
 import { OrderEditPage } from '@/pages/OrderEditPage';
+import { CalendarPage } from '@/pages/CalendarPage';
 import { ClientListPage } from '@/pages/ClientListPage';
 import { ClientDetailPage } from '@/pages/ClientDetailPage';
 import { WorkshopPage } from '@/pages/WorkshopPage';
@@ -15,6 +16,7 @@ export function PageRouter({ onLock: _onLock }: { onLock: () => void }) {
   if (current === 'dashboard') return <DashboardPage />;
   if (current === 'orders') return <OrderListPage />;
   if (current === 'orders/new') return <OrderNewPage />;
+  if (current === 'calendar') return <CalendarPage />;
 
   if (current.startsWith('orders/')) {
     const parts = current.split('/');

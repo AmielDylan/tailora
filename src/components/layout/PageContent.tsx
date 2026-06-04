@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
-type PageContentVariant = 'full' | 'narrow' | 'form';
+type PageContentVariant = 'full' | 'narrow' | 'form' | 'empty';
 
 type Props = {
   children: ReactNode;
@@ -13,6 +13,7 @@ const VARIANT_CLASS: Record<PageContentVariant, string> = {
   full: 'flex flex-col gap-4 p-4 pb-24 lg:p-6',
   narrow: 'mx-auto flex w-full max-w-xl flex-col gap-5 p-4 pb-24 lg:p-6',
   form: 'mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 pb-24 lg:p-6',
+  empty: 'flex min-h-[calc(100dvh-4rem)] flex-col items-center justify-start gap-4 p-4 pb-24 pt-6 lg:justify-center lg:p-6',
 };
 
 export function PageContent({ children, variant = 'full', className }: Props) {
