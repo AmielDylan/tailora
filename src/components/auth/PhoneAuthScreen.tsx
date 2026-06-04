@@ -33,7 +33,12 @@ type Props = {
 function authMessage(code: string, isRegistration: boolean) {
   if (code === 'ACCOUNT_NOT_FOUND') return 'Aucun compte ne correspond à ce numéro.';
   if (code === 'WRONG_PASSWORD') return 'Le mot de passe saisi est incorrect.';
-  if (code === 'PHONE_ALREADY_REGISTERED') return 'Un compte existe déjà avec ce numéro. Connectez-vous plutôt.';
+  if (
+    code === 'PHONE_ALREADY_REGISTERED' ||
+    code === 'auth/email-already-in-use' ||
+    code === 'auth/email-already-exists' ||
+    code === 'auth/credential-already-in-use'
+  ) return 'Un compte existe déjà avec ce numéro. Connectez-vous plutôt.';
   if (code === 'TOO_MANY_ATTEMPTS') return 'Trop de tentatives. Patientez quelques minutes avant de réessayer.';
   if (code === 'NETWORK_ERROR') return 'Connexion impossible. Vérifiez internet puis réessayez.';
   if (code === 'FIREBASE_NOT_CONFIGURED') return 'La vérification téléphone n’est pas encore configurée.';

@@ -47,7 +47,9 @@ export type AuthFailureCode =
   | 'INVALID_CREDENTIALS';
 
 export function authFailure(code: AuthFailureCode) {
-  return new Error(code);
+  const error = new Error(code) as Error & { code: AuthFailureCode };
+  error.code = code;
+  return error;
 }
 
 export function internationalPhoneDigits(value: string) {
@@ -86,6 +88,14 @@ function isFirebaseUnavailable(error: unknown) {
 
 function firebaseAuthCode(error: unknown) {
   return (error as Partial<AuthError>)?.code;
+}
+
+function isPhoneAlreadyRegisteredError(code?: string) {
+  return (
+    code === 'auth/email-already-in-use' ||
+    code === 'auth/email-already-exists' ||
+    code === 'auth/credential-already-in-use'
+  );
 }
 
 function readStoredCredentials(): StoredCredentials | null {
@@ -141,6 +151,11 @@ async function localPasswordMatches(phone: string, password: string) {
   return stored.password === password;
 }
 
+function localAccountExists(phone: string) {
+  const stored = readStoredCredentials();
+  return Boolean(stored && internationalPhoneDigits(stored.phone) === internationalPhoneDigits(phone));
+}
+
 async function persistFirebaseSession(user: User, phone: string, password: string) {
   await updateProfile(user, { displayName: normalizeInternationalPhone(phone) }).catch(() => undefined);
   await saveLocalAccount(phone, password, user.uid);
@@ -177,14 +192,16 @@ export async function registerWithPhonePassword(phone: string, password: string,
       return { provider: 'firebase', user: result.user };
     } catch (error) {
       const code = firebaseAuthCode(error);
-      if (code === 'auth/email-already-in-use') throw authFailure('PHONE_ALREADY_REGISTERED');
+      if (isPhoneAlreadyRegisteredError(code)) throw authFailure('PHONE_ALREADY_REGISTERED');
       if (code === 'auth/too-many-requests') throw authFailure('TOO_MANY_ATTEMPTS');
       if (code === 'auth/network-request-failed') {
-        if (await localPasswordMatches(phone, password)) throw authFailure('PHONE_ALREADY_REGISTERED');
+        if (localAccountExists(phone)) throw authFailure('PHONE_ALREADY_REGISTERED');
       }
       if (!isFirebaseUnavailable(error)) throw error;
     }
   }
+
+  if (localAccountExists(phone)) throw authFailure('PHONE_ALREADY_REGISTERED');
 
   await saveLocalAccount(phone, password);
   resetAppDataForNewAccount();
