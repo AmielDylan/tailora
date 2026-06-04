@@ -6,6 +6,7 @@ export type Route =
   | 'orders/new'
   | `orders/${string}`
   | `orders/${string}/edit`
+  | 'calendar'
   | 'clients'
   | `clients/${string}`
   | 'workshop'
