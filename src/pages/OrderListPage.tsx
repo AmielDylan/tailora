@@ -1,7 +1,5 @@
-import { Plus } from 'lucide-react';
 import { useAppDataContext } from '@/context/AppDataContext';
 import { useNavigationContext } from '@/context/NavigationContext';
-import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PageContent } from '@/components/layout/PageContent';
 import { OrdersDataTable } from '@/components/orders/OrdersDataTable';
@@ -16,16 +14,10 @@ export function OrderListPage() {
       <PageHeader
         title="Commandes"
         subtitle={`${orders.length} commande${orders.length > 1 ? 's' : ''}`}
-        right={
-          <Button onClick={() => nav.push('orders/new')} size="lg">
-            <Plus data-icon="inline-start" strokeWidth={1.25} />
-            Nouvelle commande
-          </Button>
-        }
       />
 
-      <PageContent>
-        {orders.length === 0 ? (
+      {orders.length === 0 ? (
+        <PageContent variant="empty">
           <EmptyState
             imageSrc="/images/empty-states/orders.png"
             title="Aucune commande"
@@ -33,14 +25,16 @@ export function OrderListPage() {
             action={{ label: 'Nouvelle commande', onClick: () => nav.push('orders/new') }}
             className="bg-card"
           />
-        ) : (
+        </PageContent>
+      ) : (
+        <PageContent>
           <OrdersDataTable
             orders={orders}
             mode="orders"
             onOpen={(orderId) => nav.push(`orders/${orderId}`)}
           />
-        )}
-      </PageContent>
+        </PageContent>
+      )}
     </>
   );
 }

@@ -1,10 +1,9 @@
-import { AlertTriangle, Banknote, Clock, Package, Plus, Users } from 'lucide-react';
+import { AlertTriangle, Banknote, Clock, Package, Users } from 'lucide-react';
 import type { ElementType } from 'react';
 import { useMemo } from 'react';
 import { useAppDataContext } from '@/context/AppDataContext';
 import { useAccountContext } from '@/context/AccountContext';
 import { useNavigationContext } from '@/context/NavigationContext';
-import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PageContent } from '@/components/layout/PageContent';
 import { BentoCard } from '@/components/shared/BentoCard';
@@ -61,20 +60,14 @@ export function DashboardPage() {
     [dashboard.unpaid],
   );
 
-  const newOrderBtn = (
-    <Button onClick={() => nav.push('orders/new')} size="lg">
-      <Plus data-icon="inline-start" strokeWidth={1.25} />
-      <span>Nouvelle commande</span>
-    </Button>
-  );
   const greeting = profile ? `Bonjour ${profile.firstName}` : undefined;
   const recapSubtitle = activeWorkshop ? "Indicateurs rapides de l'atelier." : 'Indicateurs rapides de votre carnet.';
 
   if (orders.length === 0) {
     return (
       <>
-        <PageHeader title="Tableau de bord" subtitle={greeting} right={newOrderBtn} />
-        <PageContent className="flex-1 items-center justify-center pb-8">
+        <PageHeader title="Tableau de bord" subtitle={greeting} />
+        <PageContent variant="empty">
           <EmptyState
             icon={Package}
             imageSrc="/images/empty-states/dashboard.png"
@@ -90,7 +83,7 @@ export function DashboardPage() {
 
   return (
     <>
-      <PageHeader title="Tableau de bord" subtitle={greeting ?? `${orders.length} commande${orders.length > 1 ? 's' : ''} dans le carnet`} right={newOrderBtn} />
+      <PageHeader title="Tableau de bord" subtitle={greeting ?? `${orders.length} commande${orders.length > 1 ? 's' : ''} dans le carnet`} />
       <PageContent className="gap-5 pb-8">
         <section className="flex flex-col gap-3">
           <SectionTitle title="Récapitulatif" subtitle={recapSubtitle} />

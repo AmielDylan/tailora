@@ -1,4 +1,4 @@
-import { LayoutDashboard, Lock, LogOut, Package, Scissors, Store, User, Users } from 'lucide-react';
+import { CalendarDays, LayoutDashboard, Lock, LogOut, Package, Scissors, Store, User, Users } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -17,6 +17,7 @@ import type { Route } from '@/hooks/useNavigation';
 const NAV_ITEMS: { label: string; route: Route; icon: React.ElementType }[] = [
   { label: 'Tableau de bord', route: 'dashboard', icon: LayoutDashboard },
   { label: 'Commandes',       route: 'orders',    icon: Package  },
+  { label: 'Calendrier',      route: 'calendar',  icon: CalendarDays },
   { label: 'Clients',         route: 'clients',   icon: Users    },
   { label: 'Atelier',         route: 'workshop',  icon: Store    },
 ];

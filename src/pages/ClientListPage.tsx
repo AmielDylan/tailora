@@ -132,8 +132,8 @@ export function ClientListPage() {
   return (
     <>
       <PageHeader title="Clients" subtitle={`${clients.length} fiche${clients.length > 1 ? 's' : ''} client`} />
-      <PageContent>
-        {clients.length === 0 ? (
+      {clients.length === 0 ? (
+        <PageContent variant="empty">
           <EmptyState
             icon={Users}
             imageSrc="/images/empty-states/clients.png"
@@ -141,7 +141,9 @@ export function ClientListPage() {
             subtitle="Les clients sont créés automatiquement à la première commande."
             className="bg-card"
           />
-        ) : (
+        </PageContent>
+      ) : (
+        <PageContent>
           <>
             {/* Search */}
             <div className="relative">
@@ -190,8 +192,8 @@ export function ClientListPage() {
               </table>
             </div>
           </>
-        )}
-      </PageContent>
+        </PageContent>
+      )}
 
       {/* Delete confirmation dialog */}
       <Dialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
