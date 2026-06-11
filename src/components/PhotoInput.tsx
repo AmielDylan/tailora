@@ -1,7 +1,7 @@
 import { type ChangeEvent, useRef, useState } from 'react';
 import { Camera, ExternalLink, FolderOpen, ImageIcon, Link, Loader2, Plus, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ImageTooLargeError, compressImage } from '@/lib/image';
+import { ImageTooLargeError, ImageUnsupportedError, compressImage } from '@/lib/image';
 
 type Props = {
   label: string;
@@ -50,7 +50,7 @@ export function PhotoInput({ label, required, image, links = [], onImage, onAddL
       const base64 = await compressImage(file);
       onImage(base64);
     } catch (err) {
-      setFileError(err instanceof ImageTooLargeError ? err.message : 'Impossible de lire cette image.');
+      setFileError(err instanceof ImageTooLargeError || err instanceof ImageUnsupportedError ? err.message : 'Impossible de lire cette image.');
     } finally {
       setCompressing(false);
       e.target.value = '';
@@ -69,13 +69,13 @@ export function PhotoInput({ label, required, image, links = [], onImage, onAddL
       label: 'Prendre une photo',
       icon: Camera,
       ref: cameraRef,
-      inputProps: { accept: 'image/*', capture: 'environment' as const },
+      inputProps: { accept: 'image/*,.heic,.heif', capture: 'environment' as const },
     },
     {
       label: 'Choisir dans la galerie',
       icon: ImageIcon,
       ref: galleryRef,
-      inputProps: { accept: 'image/*' },
+      inputProps: { accept: 'image/*,.heic,.heif' },
     },
     {
       label: 'Parcourir les fichiers',
