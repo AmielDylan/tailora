@@ -8,6 +8,7 @@ import { NavigationProvider } from '@/context/NavigationContext';
 import { AppShell } from '@/components/layout/AppShell';
 import { WelcomeProfileScreen } from '@/components/onboarding/WelcomeProfileScreen';
 import { logoutAuth } from '@/lib/auth';
+import { PublicWorkshopPage } from '@/pages/PublicWorkshopPage';
 
 function AuthenticatedApp({ onLock, onLogout, pinEnabled }: { onLock: () => void; onLogout: () => void; pinEnabled: boolean }) {
   const { profile } = useAccountContext();
@@ -29,6 +30,7 @@ export function App() {
   const [authenticated, setAuthenticated] = useState(() => localStorage.getItem(AUTH_KEY) === 'true');
   const [locked, setLocked] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('register');
+  const publicWorkshopMatch = window.location.pathname.match(/^\/atelier\/([^/]+)$/);
 
   function logout() {
     void logoutAuth();
@@ -69,6 +71,10 @@ export function App() {
   }, [authenticated, resetActivity]);
 
   // ── Couche 1 : auth complète ────────────────────────────────────
+  if (publicWorkshopMatch) {
+    return <PublicWorkshopPage slug={decodeURIComponent(publicWorkshopMatch[1])} />;
+  }
+
   if (!authenticated) {
     return (
       <PhoneAuthScreen

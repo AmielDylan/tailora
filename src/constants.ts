@@ -7,6 +7,8 @@ export const STATUSES: Status[] = ['Reçue', 'En cours', 'Terminée', 'Livrée']
 export const STORAGE_KEY = 'tailora-mvp-state';
 export const STORAGE_FALLBACK_KEY = 'tailora-mvp-state-session';
 export const ORDER_DRAFT_KEY = 'tailora-order-draft';
+export const WORKSHOP_FEATURES_NOTICE_KEY = 'tailora-workshop-features-notice-dismissed';
+export const WORKSHOP_MIGRATION_NOTICE_KEY = 'tailora-workshop-migration-dismissed';
 export const PIN_KEY = 'tailora-pin';
 export const AUTH_KEY = 'tailora-authenticated';
 export const CREDENTIALS_KEY = 'tailora-credentials';
@@ -27,6 +29,8 @@ export const defaultMeasurements: Measurement[] = [
 export function makeEmptyForm(): FormState {
   return {
     clientId: '',
+    scope: 'personal',
+    workshopId: undefined,
     clientName: '',
     clientPhone: '',
     clientAddress: '',

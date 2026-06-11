@@ -1,7 +1,8 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
 import { ACTIVE_WORKSHOP_ID_KEY, USER_PROFILE_KEY, WORKSHOPS_KEY } from '@/constants';
 import { uid } from '@/helpers';
-import type { UserProfile, Workshop } from '@/types';
+import { BANNER_STYLES, normalizeOpeningSchedule, slugifyWorkshopName, unpublishPublicWorkshop } from '@/lib/workshop';
+import type { OpeningDay, UserProfile, Workshop, WorkshopLink } from '@/types';
 
 type ProfileInput = {
   firstName: string;
@@ -13,7 +14,11 @@ type WorkshopInput = {
   address?: string;
   professionalPhone?: string;
   openingDays?: string;
+  openingSchedule?: OpeningDay[];
   whatsappSignature?: string;
+  bannerStyle?: string;
+  publicLinks?: WorkshopLink[];
+  publicProfileEnabled?: boolean;
 };
 
 type AccountContextValue = {
@@ -23,6 +28,7 @@ type AccountContextValue = {
   saveProfile: (input: ProfileInput) => UserProfile;
   createWorkshop: (input: WorkshopInput) => Workshop | null;
   saveActiveWorkshop: (input: WorkshopInput) => Workshop | null;
+  deleteActiveWorkshop: () => Workshop | null;
 };
 
 const AccountContext = createContext<AccountContextValue | null>(null);
@@ -39,10 +45,15 @@ function readJson<T>(key: string, fallback: T): T {
 function normalizeWorkshop(workshop: Workshop): Workshop {
   return {
     ...workshop,
+    slug: workshop.slug ?? slugifyWorkshopName(workshop.name),
     address: workshop.address ?? '',
     professionalPhone: workshop.professionalPhone ?? '',
     openingDays: workshop.openingDays ?? '',
+    openingSchedule: normalizeOpeningSchedule(workshop.openingSchedule, workshop.openingDays),
     whatsappSignature: workshop.whatsappSignature ?? '',
+    bannerStyle: workshop.bannerStyle ?? BANNER_STYLES[0].value,
+    publicLinks: workshop.publicLinks ?? [],
+    publicProfileEnabled: workshop.publicProfileEnabled ?? false,
     coverImage: workshop.coverImage ?? '',
     profileImage: workshop.profileImage ?? '',
   };
@@ -95,10 +106,15 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     const workshop: Workshop = {
       id: uid('w'),
       name,
+      slug: slugifyWorkshopName(name),
       address: input.address?.trim() ?? '',
       professionalPhone: input.professionalPhone?.trim() ?? '',
       openingDays: input.openingDays?.trim() ?? '',
+      openingSchedule: normalizeOpeningSchedule(input.openingSchedule, input.openingDays),
       whatsappSignature: input.whatsappSignature?.trim() ?? '',
+      bannerStyle: input.bannerStyle ?? BANNER_STYLES[0].value,
+      publicLinks: input.publicLinks ?? [],
+      publicProfileEnabled: input.publicProfileEnabled ?? false,
       coverImage: '',
       profileImage: '',
       createdAt: now,
@@ -120,16 +136,34 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     const nextWorkshop: Workshop = {
       ...activeWorkshop,
       name,
+      slug: activeWorkshop.slug ?? slugifyWorkshopName(name),
       address: input.address?.trim() ?? '',
       professionalPhone: input.professionalPhone?.trim() ?? '',
       openingDays: input.openingDays?.trim() ?? '',
+      openingSchedule: normalizeOpeningSchedule(input.openingSchedule, input.openingDays),
       whatsappSignature: input.whatsappSignature?.trim() ?? '',
+      bannerStyle: input.bannerStyle ?? activeWorkshop.bannerStyle ?? BANNER_STYLES[0].value,
+      publicLinks: input.publicLinks ?? activeWorkshop.publicLinks ?? [],
+      publicProfileEnabled: input.publicProfileEnabled ?? activeWorkshop.publicProfileEnabled ?? false,
       updatedAt: new Date().toISOString(),
     };
     persistWorkshops(workshops.map((workshop) => (
       workshop.id === nextWorkshop.id ? nextWorkshop : workshop
     )));
     return nextWorkshop;
+  }
+
+  function deleteActiveWorkshop() {
+    if (!activeWorkshop) return null;
+    const deleted = activeWorkshop;
+    const nextWorkshops = workshops.filter((workshop) => workshop.id !== deleted.id);
+    persistWorkshops(nextWorkshops);
+    const nextActiveId = nextWorkshops[0]?.id ?? '';
+    setActiveWorkshopId(nextActiveId);
+    if (nextActiveId) localStorage.setItem(ACTIVE_WORKSHOP_ID_KEY, nextActiveId);
+    else localStorage.removeItem(ACTIVE_WORKSHOP_ID_KEY);
+    void unpublishPublicWorkshop(deleted.slug);
+    return deleted;
   }
 
   const value: AccountContextValue = {
@@ -139,6 +173,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     saveProfile,
     createWorkshop,
     saveActiveWorkshop,
+    deleteActiveWorkshop,
   };
 
   return <AccountContext.Provider value={value}>{children}</AccountContext.Provider>;

@@ -40,6 +40,8 @@ function normalizeGarment(order: Partial<Order>, garment: Garment): Garment {
 function normalizeOrder(order: Order): Order {
   return {
     ...order,
+    scope: order.scope ?? 'personal',
+    workshopId: order.scope === 'workshop' ? order.workshopId : undefined,
     measurements: copyMeasurements(order.measurements),
     garments: (order.garments?.length ? order.garments : [])
       .map((garment) => normalizeGarment(order, garment)),

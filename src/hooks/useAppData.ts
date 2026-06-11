@@ -165,6 +165,32 @@ export function useAppData() {
     setOrders((cur) => cur.map((o) => (o.id === orderId ? { ...o, status } : o)));
   }
 
+  function moveOrdersToWorkshop(orderIds: string[], workshopId: string) {
+    const selected = new Set(orderIds);
+    setOrders((cur) => cur.map((order) => (
+      selected.has(order.id)
+        ? { ...order, scope: 'workshop', workshopId }
+        : order
+    )));
+  }
+
+  function moveOrdersToPersonal(orderIds: string[]) {
+    const selected = new Set(orderIds);
+    setOrders((cur) => cur.map((order) => (
+      selected.has(order.id)
+        ? { ...order, scope: 'personal', workshopId: undefined }
+        : order
+    )));
+  }
+
+  function moveWorkshopOrdersToPersonal(workshopId: string) {
+    setOrders((cur) => cur.map((order) => (
+      order.workshopId === workshopId
+        ? { ...order, scope: 'personal', workshopId: undefined }
+        : order
+    )));
+  }
+
   return {
     clients,
     orders,
@@ -179,6 +205,9 @@ export function useAppData() {
     deleteOrder,
     deleteClientCascade,
     changeStatus,
+    moveOrdersToWorkshop,
+    moveOrdersToPersonal,
+    moveWorkshopOrdersToPersonal,
     setSearch,
     setStatusFilter,
     setSelectedClientId,
