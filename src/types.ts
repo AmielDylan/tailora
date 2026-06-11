@@ -11,13 +11,46 @@ export type UserProfile = {
 export type Workshop = {
   id: string;
   name: string;
+  slug?: string;
   address?: string;
   professionalPhone?: string;
   openingDays?: string;
+  openingSchedule?: OpeningDay[];
   whatsappSignature?: string;
+  bannerStyle?: string;
+  publicLinks?: WorkshopLink[];
+  publicProfileEnabled?: boolean;
   coverImage?: string;
   profileImage?: string;
   createdAt: string;
+  updatedAt: string;
+};
+
+export type OpeningDay = {
+  day: number;
+  open: boolean;
+  start: string;
+  end: string;
+  note?: string;
+};
+
+export type WorkshopLink = {
+  id: string;
+  label: string;
+  url: string;
+};
+
+export type PublicWorkshop = {
+  id: string;
+  ownerUid: string;
+  slug: string;
+  name: string;
+  address?: string;
+  professionalPhone?: string;
+  openingSchedule?: OpeningDay[];
+  whatsappSignature?: string;
+  bannerStyle?: string;
+  publicLinks?: WorkshopLink[];
   updatedAt: string;
 };
 
@@ -57,6 +90,8 @@ export type Client = {
 
 export type Order = {
   id: string;
+  scope?: 'personal' | 'workshop';
+  workshopId?: string;
   clientId: string;
   clientName: string;
   clientPhone: string;

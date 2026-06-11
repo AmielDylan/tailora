@@ -27,6 +27,7 @@ type OrderTableRow = {
   status: Order['status'];
   totalPrice: number;
   balanceDue: number;
+  scope: 'personal' | 'workshop';
   flags: string[];
   order: Order;
 };
@@ -67,6 +68,7 @@ function toRow(order: Order): OrderTableRow {
     status: order.status,
     totalPrice: order.totalPrice,
     balanceDue,
+    scope: order.scope ?? 'personal',
     flags: [
       lateDays > 0 ? 'late' : '',
       balanceDue > 0 ? 'balance' : '',
@@ -165,6 +167,29 @@ export function OrdersDataTable({
           options: [
             { label: 'En retard', value: 'late', icon: CircleAlert },
             { label: 'Solde dû', value: 'balance', icon: Coins },
+          ],
+        },
+        enableColumnFilter: true,
+      },
+      {
+        id: 'scope',
+        accessorKey: 'scope',
+        header: ({ column }) => <DataTableColumnHeader column={column} label="Carnet" />,
+        cell: ({ row }) => (
+          <Badge variant="outline" className={row.original.scope === 'workshop'
+            ? 'h-5 rounded-md border-sky-700/10 bg-sky-700/[0.08] px-1.5 text-[0.65rem] font-medium leading-none text-sky-700'
+            : 'h-5 rounded-md border-zinc-700/10 bg-zinc-700/[0.06] px-1.5 text-[0.65rem] font-medium leading-none text-zinc-600'}
+          >
+            {row.original.scope === 'workshop' ? 'Atelier' : 'Perso'}
+          </Badge>
+        ),
+        filterFn: multiValueFilter,
+        meta: {
+          label: 'Carnet',
+          variant: 'multiSelect',
+          options: [
+            { label: 'Personnel', value: 'personal' },
+            { label: 'Atelier', value: 'workshop' },
           ],
         },
         enableColumnFilter: true,

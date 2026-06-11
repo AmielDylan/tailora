@@ -93,6 +93,8 @@ Préparer une version testable par 3 à 5 couturiers : confirmations, messages s
 ### Atelier et WhatsApp
 
 - V1 gratuite : liens WhatsApp préremplis pour relancer une livraison, demander les mensurations, signaler une commande prête ou rappeler un solde.
+- V1/V2 : profil atelier partageable enrichi avec galerie, liens publics, bannière personnalisée et informations d'ouverture.
+- V2 : formulaire public de demande de commande, validation/refus par le couturier, création de commandes entrantes et suivi des échanges WhatsApp liés.
 - V2 payante : WhatsApp Cloud API avec templates validés, envoi automatique, relances programmées, statut des messages et historique de conversation.
 - V2/V3 payante : modèles de messages par atelier, campagnes simples pour clientes fidèles, rappels saisonniers et suivi après livraison.
 

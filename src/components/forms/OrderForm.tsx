@@ -4,6 +4,7 @@ import type { Client, FormState, Garment, Measurement, Order, Status } from '@/t
 import { STATUSES, defaultMeasurements, makeEmptyForm } from '@/constants';
 import { balance, currency, garmentTotal, uid } from '@/helpers';
 import { useAppDataContext } from '@/context/AppDataContext';
+import { useAccountContext } from '@/context/AccountContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -51,6 +52,8 @@ function orderToForm(order: Order): FormState {
     clientName: order.clientName,
     clientPhone: order.clientPhone,
     clientAddress: order.clientAddress || '',
+    scope: order.scope ?? 'personal',
+    workshopId: order.workshopId,
     fabricReceivedAt: order.fabricReceivedAt,
     deliveryAt: order.deliveryAt,
     status: order.status,
@@ -125,6 +128,7 @@ function hasUsefulDraft(form: FormState) {
 
 export function OrderForm({ orderId, onSave, onCancel }: Props) {
   const { clients, orders, upsertClient, upsertOrderRecord, setToast } = useAppDataContext();
+  const { activeWorkshop } = useAccountContext();
 
   const existingOrder = orderId ? orders.find((o) => o.id === orderId) : undefined;
   const restoredDraft = useRef(false);
@@ -170,6 +174,14 @@ export function OrderForm({ orderId, onSave, onCancel }: Props) {
     updateForm('measurements', textMeasurements(measurements));
   }
 
+  function updateScope(value: 'personal' | 'workshop') {
+    setForm((cur) => ({
+      ...cur,
+      scope: value,
+      workshopId: value === 'workshop' ? activeWorkshop?.id : undefined,
+    }));
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const normalizedName = form.clientName.trim();
@@ -211,6 +223,8 @@ export function OrderForm({ orderId, onSave, onCancel }: Props) {
       clientName: normalizedName,
       clientPhone: normalizedPhone,
       clientAddress: form.clientAddress.trim(),
+      scope: form.scope === 'workshop' && activeWorkshop ? 'workshop' : 'personal',
+      workshopId: form.scope === 'workshop' && activeWorkshop ? activeWorkshop.id : undefined,
       totalPrice: computedTotal > 0 ? computedTotal : Number(form.totalPrice || 0),
       deposit: Number(form.deposit || 0),
       measurements: textMeasurements(form.measurements),
@@ -299,7 +313,7 @@ export function OrderForm({ orderId, onSave, onCancel }: Props) {
       </OptionalSection>
 
       <Section title="Commande">
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid gap-3 md:grid-cols-3">
           <label className="flex flex-col gap-1.5">
             <span className="text-sm font-medium text-foreground">Réception tissu *</span>
             <Input
@@ -318,6 +332,22 @@ export function OrderForm({ orderId, onSave, onCancel }: Props) {
               required
             />
           </label>
+          {activeWorkshop && (
+            <label className="flex flex-col gap-1.5">
+              <span className="text-sm font-medium text-foreground">Carnet</span>
+              <Select value={form.scope ?? 'personal'} onValueChange={(value) => updateScope(value as 'personal' | 'workshop')}>
+                <SelectTrigger className="w-full bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="personal">Personnel</SelectItem>
+                    <SelectItem value="workshop">{activeWorkshop.name}</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </label>
+          )}
         </div>
       </Section>
 
