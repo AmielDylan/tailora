@@ -6,6 +6,7 @@ import { useAppDataContext } from '@/context/AppDataContext';
 import { useAccountContext } from '@/context/AccountContext';
 import { useNavigationContext } from '@/context/NavigationContext';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PageContent } from '@/components/layout/PageContent';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -24,7 +25,7 @@ function DetailSection({ title, children }: { title: string; children: ReactNode
 }
 
 export function OrderDetailPage({ orderId }: { orderId: string }) {
-  const { orders, changeStatus, deleteOrder, setToast } = useAppDataContext();
+  const { orders, changeStatus, deleteOrder, setToast, moveOrdersToWorkshop, moveOrdersToPersonal } = useAppDataContext();
   const { activeWorkshop } = useAccountContext();
   const nav = useNavigationContext();
 
@@ -42,6 +43,7 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
 
   const late = isLate(order);
   const remaining = balance(order);
+  const isWorkshopOrder = order.scope === 'workshop';
   const whatsappActions: { kind: WhatsAppMessageKind; label: string }[] = [
     { kind: 'ready', label: 'Commande prête' },
     { kind: 'deliveryReminder', label: 'Rappel livraison' },
@@ -82,6 +84,9 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-col gap-2">
               <StatusBadge status={order.status} />
+              <Badge variant="outline" className={isWorkshopOrder ? 'w-fit border-sky-700/10 bg-sky-700/[0.08] text-sky-700' : 'w-fit border-zinc-700/10 bg-zinc-700/[0.06] text-zinc-600'}>
+                {isWorkshopOrder ? 'Atelier' : 'Personnel'}
+              </Badge>
               {late && (
                 <p className="inline-flex items-center gap-2 text-sm font-medium text-destructive">
                   <AlertTriangle className="size-4" strokeWidth={1.25} />
@@ -156,6 +161,20 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
                 ))}
               </div>
             </DetailSection>
+
+            {activeWorkshop && (
+              <DetailSection title="Organisation">
+                {isWorkshopOrder ? (
+                  <Button variant="outline" onClick={() => moveOrdersToPersonal([order.id])}>
+                    Remettre en personnel
+                  </Button>
+                ) : (
+                  <Button variant="outline" onClick={() => moveOrdersToWorkshop([order.id], activeWorkshop.id)}>
+                    Ajouter à l'atelier
+                  </Button>
+                )}
+              </DetailSection>
+            )}
 
             <DetailSection title="WhatsApp">
               <div className="grid gap-2">
