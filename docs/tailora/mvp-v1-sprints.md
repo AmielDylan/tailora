@@ -87,3 +87,21 @@ Préparer une version testable par 3 à 5 couturiers : confirmations, messages s
 - Paiement léger indispensable ou optionnel.
 - PWA mobile-first ou application native.
 - Durée du test terrain et nombre de couturiers testeurs.
+
+## Backlog produit
+
+### Atelier et WhatsApp
+
+- V1 gratuite : liens WhatsApp préremplis pour relancer une livraison, demander les mensurations, signaler une commande prête ou rappeler un solde.
+- V2 payante : WhatsApp Cloud API avec templates validés, envoi automatique, relances programmées, statut des messages et historique de conversation.
+- V2/V3 payante : modèles de messages par atelier, campagnes simples pour clientes fidèles, rappels saisonniers et suivi après livraison.
+
+### Photos et stockage
+
+- Court terme : compression plus forte, brouillons de formulaire et messages clairs pour les formats mobiles difficiles.
+- Si le volume photo augmente : migrer les images vers Firebase Storage et garder dans Firestore uniquement les URLs et métadonnées.
+
+### Apprentissage couture
+
+- V2 : module tutoriel pour débuter en couture, avec fiches courtes, vocabulaire, mesures de base et conseils pratiques.
+- V3 : contenus publiés par des couturiers, vidéos de formation, parcours guidés et contenus générés ou assistés par IA.

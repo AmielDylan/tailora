@@ -1,4 +1,4 @@
-import { STORAGE_KEY, defaultMeasurements } from '@/constants';
+import { STORAGE_FALLBACK_KEY, STORAGE_KEY, defaultMeasurements } from '@/constants';
 import type { Client, Garment, Measurement, Order } from '@/types';
 import { getFirebaseServices } from '@/lib/firebase';
 import {
@@ -63,7 +63,7 @@ export function hasAppData(state: AppState) {
 
 export function loadStateRecord(): RemoteAppState {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY) ?? sessionStorage.getItem(STORAGE_FALLBACK_KEY);
     if (!raw) return { state: { clients: [], orders: [] }, updatedAt: '' };
     const parsed = JSON.parse(raw) as Partial<StoredAppState>;
     return {
@@ -80,11 +80,24 @@ export function loadState(): AppState {
 }
 
 export function saveState(state: AppState, updatedAt = nowIso()): string {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+  const serialized = JSON.stringify({
     ...state,
     schemaVersion: STATE_SCHEMA_VERSION,
     updatedAt,
-  }));
+  });
+
+  try {
+    localStorage.setItem(STORAGE_KEY, serialized);
+    sessionStorage.removeItem(STORAGE_FALLBACK_KEY);
+  } catch (error) {
+    console.warn('Tailora local storage quota reached, using session fallback.', error);
+    try {
+      sessionStorage.setItem(STORAGE_FALLBACK_KEY, serialized);
+    } catch (fallbackError) {
+      console.warn('Tailora session fallback storage failed.', fallbackError);
+    }
+  }
+
   return updatedAt;
 }
 

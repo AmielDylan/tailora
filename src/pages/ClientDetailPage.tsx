@@ -1,12 +1,15 @@
 import { useAppDataContext } from '@/context/AppDataContext';
+import { useAccountContext } from '@/context/AccountContext';
 import { useNavigationContext } from '@/context/NavigationContext';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PageContent } from '@/components/layout/PageContent';
 import { StatusBadge } from '@/components/StatusBadge';
 import { currency, balance, dateLabel } from '@/helpers';
+import { clientWhatsAppMessage, whatsappUrl } from '@/lib/whatsapp';
 
 export function ClientDetailPage({ clientId }: { clientId: string }) {
   const { clients, orders } = useAppDataContext();
+  const { activeWorkshop } = useAccountContext();
   const nav = useNavigationContext();
 
   const client = clients.find((c) => c.id === clientId);
@@ -42,6 +45,24 @@ export function ClientDetailPage({ clientId }: { clientId: string }) {
           </div>
           {client.address && <p className="text-sm text-muted-foreground">{client.address}</p>}
           {client.notes && <p className="text-sm italic text-muted-foreground border-t border-border pt-2">{client.notes}</p>}
+          <div className="flex flex-col gap-2 border-t border-border pt-3 sm:flex-row">
+            <a
+              href={whatsappUrl(client.phone, clientWhatsAppMessage('measurements', client, activeWorkshop))}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-9 flex-1 items-center justify-center rounded-lg border border-border bg-background px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+            >
+              Demander les mesures
+            </a>
+            <a
+              href={whatsappUrl(client.phone, clientWhatsAppMessage('free', client, activeWorkshop))}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-9 flex-1 items-center justify-center rounded-lg border border-border bg-background px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+            >
+              Message WhatsApp
+            </a>
+          </div>
         </div>
 
         {/* Last measurements */}
