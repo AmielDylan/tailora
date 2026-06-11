@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { STATUSES } from '@/constants';
 import { balance, currency, dateLabel, isLate } from '@/helpers';
 import { useAppDataContext } from '@/context/AppDataContext';
+import { useAccountContext } from '@/context/AccountContext';
 import { useNavigationContext } from '@/context/NavigationContext';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -11,6 +12,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { MeasurementsSummary } from '@/components/MeasurementsSummary';
 import { GarmentsSummary } from '@/components/GarmentsSummary';
 import type { Status } from '@/types';
+import { orderWhatsAppMessage, whatsappUrl, type WhatsAppMessageKind } from '@/lib/whatsapp';
 
 function DetailSection({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -23,6 +25,7 @@ function DetailSection({ title, children }: { title: string; children: ReactNode
 
 export function OrderDetailPage({ orderId }: { orderId: string }) {
   const { orders, changeStatus, deleteOrder, setToast } = useAppDataContext();
+  const { activeWorkshop } = useAccountContext();
   const nav = useNavigationContext();
 
   const order = orders.find((o) => o.id === orderId);
@@ -39,6 +42,13 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
 
   const late = isLate(order);
   const remaining = balance(order);
+  const whatsappActions: { kind: WhatsAppMessageKind; label: string }[] = [
+    { kind: 'ready', label: 'Commande prête' },
+    { kind: 'deliveryReminder', label: 'Rappel livraison' },
+    { kind: 'measurements', label: 'Demander mesures' },
+    { kind: 'balance', label: 'Rappel solde' },
+    { kind: 'free', label: 'Message libre' },
+  ];
 
   function handleDelete() {
     if (window.confirm(`Supprimer la commande de ${order!.clientName} ? Cette action est définitive.`)) {
@@ -143,6 +153,22 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
                   >
                     {status}
                   </Button>
+                ))}
+              </div>
+            </DetailSection>
+
+            <DetailSection title="WhatsApp">
+              <div className="grid gap-2">
+                {whatsappActions.map((action) => (
+                  <a
+                    key={action.kind}
+                    href={whatsappUrl(order.clientPhone, orderWhatsAppMessage(action.kind, order, activeWorkshop))}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex min-h-9 items-center justify-center rounded-lg border border-border bg-background px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+                  >
+                    {action.label}
+                  </a>
                 ))}
               </div>
             </DetailSection>

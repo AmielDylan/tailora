@@ -13,6 +13,7 @@ type WorkshopInput = {
   address?: string;
   professionalPhone?: string;
   openingDays?: string;
+  whatsappSignature?: string;
 };
 
 type AccountContextValue = {
@@ -41,6 +42,7 @@ function normalizeWorkshop(workshop: Workshop): Workshop {
     address: workshop.address ?? '',
     professionalPhone: workshop.professionalPhone ?? '',
     openingDays: workshop.openingDays ?? '',
+    whatsappSignature: workshop.whatsappSignature ?? '',
     coverImage: workshop.coverImage ?? '',
     profileImage: workshop.profileImage ?? '',
   };
@@ -96,6 +98,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
       address: input.address?.trim() ?? '',
       professionalPhone: input.professionalPhone?.trim() ?? '',
       openingDays: input.openingDays?.trim() ?? '',
+      whatsappSignature: input.whatsappSignature?.trim() ?? '',
       coverImage: '',
       profileImage: '',
       createdAt: now,
@@ -120,6 +123,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
       address: input.address?.trim() ?? '',
       professionalPhone: input.professionalPhone?.trim() ?? '',
       openingDays: input.openingDays?.trim() ?? '',
+      whatsappSignature: input.whatsappSignature?.trim() ?? '',
       updatedAt: new Date().toISOString(),
     };
     persistWorkshops(workshops.map((workshop) => (

@@ -5,6 +5,8 @@ import { uid, today } from './helpers';
 export const STATUSES: Status[] = ['Reçue', 'En cours', 'Terminée', 'Livrée'];
 
 export const STORAGE_KEY = 'tailora-mvp-state';
+export const STORAGE_FALLBACK_KEY = 'tailora-mvp-state-session';
+export const ORDER_DRAFT_KEY = 'tailora-order-draft';
 export const PIN_KEY = 'tailora-pin';
 export const AUTH_KEY = 'tailora-authenticated';
 export const CREDENTIALS_KEY = 'tailora-credentials';

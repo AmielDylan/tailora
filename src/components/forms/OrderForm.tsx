@@ -1,4 +1,5 @@
-import { type FormEvent, type ReactNode, useState } from 'react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
+import { type FormEvent, type ReactNode, useEffect, useRef, useState } from 'react';
 import type { Client, FormState, Garment, Measurement, Order, Status } from '@/types';
 import { STATUSES, defaultMeasurements, makeEmptyForm } from '@/constants';
 import { balance, currency, garmentTotal, uid } from '@/helpers';
@@ -16,6 +17,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { MeasurementsEditor } from '@/components/forms/MeasurementsEditor';
 import { GarmentsEditor } from '@/components/forms/GarmentsEditor';
+import { clearOrderDraft, loadOrderDraft, saveOrderDraft } from '@/lib/order-draft';
 
 type Props = {
   orderId?: string | null;
@@ -71,13 +73,79 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
+function OptionalSection({
+  title,
+  open,
+  onToggle,
+  children,
+}: {
+  title: string;
+  open: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
+  const Icon = open ? ChevronDown : ChevronRight;
+
+  return (
+    <section className="rounded-lg border border-border/70 bg-card">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+      >
+        <span className="text-sm font-medium text-foreground">{title}</span>
+        <Icon className="size-4 text-muted-foreground" strokeWidth={1.25} />
+      </button>
+      {open && <div className="border-t border-border/70 p-4">{children}</div>}
+    </section>
+  );
+}
+
+function hasUsefulDraft(form: FormState) {
+  return Boolean(
+    form.clientName.trim() ||
+    form.clientPhone.trim() ||
+    form.clientAddress.trim() ||
+    form.notes.trim() ||
+    form.totalPrice ||
+    form.deposit ||
+    form.garments.some((garment) => (
+      garment.description.trim() ||
+      garment.wearerName?.trim() ||
+      garment.fabricType?.trim() ||
+      garment.measurementsNote?.trim() ||
+      garment.fabricPhoto ||
+      garment.modelPhoto ||
+      garment.fabricLinks?.length ||
+      garment.modelLinks?.length ||
+      garment.price
+    )),
+  );
+}
+
 export function OrderForm({ orderId, onSave, onCancel }: Props) {
   const { clients, orders, upsertClient, upsertOrderRecord, setToast } = useAppDataContext();
 
   const existingOrder = orderId ? orders.find((o) => o.id === orderId) : undefined;
-  const [form, setForm] = useState<FormState>(() =>
-    existingOrder ? orderToForm(existingOrder) : makeEmptyForm(),
-  );
+  const restoredDraft = useRef(false);
+  const [form, setForm] = useState<FormState>(() => {
+    if (existingOrder) return orderToForm(existingOrder);
+    const draft = loadOrderDraft(orderId);
+    if (draft?.form) {
+      restoredDraft.current = true;
+      return draft.form;
+    }
+    return makeEmptyForm();
+  });
+  const [clientDetailsOpen, setClientDetailsOpen] = useState(Boolean(form.clientAddress || form.clientId));
+  const [orderDetailsOpen, setOrderDetailsOpen] = useState(Boolean(existingOrder));
+  const [paymentOpen, setPaymentOpen] = useState(Boolean(form.deposit || form.totalPrice || form.notes));
+
+  useEffect(() => {
+    if (!hasUsefulDraft(form)) return;
+    const timer = window.setTimeout(() => saveOrderDraft(form, orderId), 250);
+    return () => window.clearTimeout(timer);
+  }, [form, orderId]);
 
   function updateForm<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((cur) => ({ ...cur, [key]: value }));
@@ -153,8 +221,15 @@ export function OrderForm({ orderId, onSave, onCancel }: Props) {
     };
 
     upsertOrderRecord(payload);
+    clearOrderDraft(orderId);
     setToast(orderId ? 'Commande mise à jour' : 'Commande ajoutée');
     onSave?.(clientId);
+  }
+
+  function handleCancel() {
+    if (hasUsefulDraft(form) && !window.confirm('Annuler cette saisie et supprimer le brouillon ?')) return;
+    clearOrderDraft(orderId);
+    onCancel?.();
   }
 
   const subTotal = garmentTotal(form.garments);
@@ -163,25 +238,14 @@ export function OrderForm({ orderId, onSave, onCancel }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+      {restoredDraft.current && (
+        <div className="rounded-lg border border-emerald-700/10 bg-emerald-700/[0.08] px-4 py-3 text-sm text-emerald-700">
+          Brouillon récupéré.
+        </div>
+      )}
+
       <Section title="Client">
         <div className="grid gap-3 md:grid-cols-2">
-          <div className="md:col-span-2">
-            <Select value={form.clientId || 'new'} onValueChange={(value) => chooseClient(value === 'new' ? '' : value)}>
-              <SelectTrigger className="w-full bg-background">
-                <SelectValue placeholder="Nouveau client" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectItem value="new">Nouveau client</SelectItem>
-                  {clients.map((client) => (
-                    <SelectItem key={client.id} value={client.id}>
-                      {client.name} · {client.phone}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
           <label className="flex flex-col gap-1.5">
             <span className="text-sm font-medium text-foreground">Nom *</span>
             <Input
@@ -201,6 +265,28 @@ export function OrderForm({ orderId, onSave, onCancel }: Props) {
               placeholder="+221 77 000 00 00"
             />
           </label>
+        </div>
+      </Section>
+
+      <OptionalSection title="Client existant et adresse" open={clientDetailsOpen} onToggle={() => setClientDetailsOpen((open) => !open)}>
+        <div className="grid gap-3 md:grid-cols-2">
+          <div className="md:col-span-2">
+            <Select value={form.clientId || 'new'} onValueChange={(value) => chooseClient(value === 'new' ? '' : value)}>
+              <SelectTrigger className="w-full bg-background">
+                <SelectValue placeholder="Nouveau client" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="new">Nouveau client</SelectItem>
+                  {clients.map((client) => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.name} · {client.phone}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
           <label className="flex flex-col gap-1.5 md:col-span-2">
             <span className="text-sm font-medium text-foreground">Adresse</span>
             <Input
@@ -210,10 +296,10 @@ export function OrderForm({ orderId, onSave, onCancel }: Props) {
             />
           </label>
         </div>
-      </Section>
+      </OptionalSection>
 
       <Section title="Commande">
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-2">
           <label className="flex flex-col gap-1.5">
             <span className="text-sm font-medium text-foreground">Réception tissu *</span>
             <Input
@@ -232,6 +318,11 @@ export function OrderForm({ orderId, onSave, onCancel }: Props) {
               required
             />
           </label>
+        </div>
+      </Section>
+
+      <OptionalSection title="Statut et mensurations générales" open={orderDetailsOpen} onToggle={() => setOrderDetailsOpen((open) => !open)}>
+        <div className="flex flex-col gap-4">
           <label className="flex flex-col gap-1.5">
             <span className="text-sm font-medium text-foreground">Statut</span>
             <Select value={form.status} onValueChange={(value) => updateForm('status', value as Status)}>
@@ -249,12 +340,9 @@ export function OrderForm({ orderId, onSave, onCancel }: Props) {
               </SelectContent>
             </Select>
           </label>
+          <MeasurementsEditor measurements={form.measurements} onChange={updateMeasurements} />
         </div>
-      </Section>
-
-      <Section title="Mensurations client">
-        <MeasurementsEditor measurements={form.measurements} onChange={updateMeasurements} />
-      </Section>
+      </OptionalSection>
 
       <Section title="Vêtements">
         <GarmentsEditor
@@ -264,7 +352,7 @@ export function OrderForm({ orderId, onSave, onCancel }: Props) {
         />
       </Section>
 
-      <Section title="Prix et notes">
+      <OptionalSection title="Paiement global et notes" open={paymentOpen} onToggle={() => setPaymentOpen((open) => !open)}>
         <div className="grid gap-3 md:grid-cols-3">
           <label className="flex flex-col gap-1.5">
             <span className="text-sm font-medium text-foreground">Prix total (FCFA)</span>
@@ -299,14 +387,14 @@ export function OrderForm({ orderId, onSave, onCancel }: Props) {
             />
           </label>
         </div>
-      </Section>
+      </OptionalSection>
 
       <div className="flex flex-col gap-3 pt-2 sm:flex-row">
         <Button type="submit" className="min-h-10 w-full px-4 sm:min-h-8 sm:flex-1">
           {orderId ? 'Enregistrer les modifications' : 'Ajouter la commande'}
         </Button>
         {onCancel && (
-          <Button type="button" variant="outline" onClick={onCancel} className="min-h-10 w-full px-4 sm:min-h-8 sm:w-auto">
+          <Button type="button" variant="outline" onClick={handleCancel} className="min-h-10 w-full px-4 sm:min-h-8 sm:w-auto">
             Annuler
           </Button>
         )}

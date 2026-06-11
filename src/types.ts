@@ -14,6 +14,7 @@ export type Workshop = {
   address?: string;
   professionalPhone?: string;
   openingDays?: string;
+  whatsappSignature?: string;
   coverImage?: string;
   profileImage?: string;
   createdAt: string;

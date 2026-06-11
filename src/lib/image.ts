@@ -1,8 +1,36 @@
 const MAX_RAW_BYTES = 10 * 1024 * 1024; // 10 MB
-const MAX_PX = 800;
-const QUALITY = 0.82;
+const MAX_PX = 720;
+const QUALITY = 0.74;
 
 export class ImageTooLargeError extends Error {}
+export class ImageUnsupportedError extends Error {}
+
+function isHeicLike(file: File) {
+  const name = file.name.toLowerCase();
+  return file.type === 'image/heic' ||
+    file.type === 'image/heif' ||
+    name.endsWith('.heic') ||
+    name.endsWith('.heif');
+}
+
+async function normalizeFile(file: File): Promise<Blob> {
+  if (!isHeicLike(file)) return file;
+
+  try {
+    const heic2any = (await import('heic2any')).default;
+    const converted = await heic2any({
+      blob: file,
+      toType: 'image/jpeg',
+      quality: 0.8,
+    });
+
+    return Array.isArray(converted) ? converted[0] : converted;
+  } catch {
+    throw new ImageUnsupportedError(
+      'Cette photo HEIC/HEIF ne peut pas être lue ici. Essaie de la reprendre depuis l’appareil photo ou de l’envoyer en JPG/PNG.',
+    );
+  }
+}
 
 export async function compressImage(file: File): Promise<string> {
   if (file.size > MAX_RAW_BYTES) {
@@ -11,8 +39,10 @@ export async function compressImage(file: File): Promise<string> {
     );
   }
 
+  const readableFile = await normalizeFile(file);
+
   return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file);
+    const url = URL.createObjectURL(readableFile);
     const img = new Image();
 
     img.onload = () => {
@@ -38,7 +68,7 @@ export async function compressImage(file: File): Promise<string> {
 
     img.onerror = () => {
       URL.revokeObjectURL(url);
-      reject(new Error('Impossible de lire cette image.'));
+      reject(new ImageUnsupportedError('Impossible de lire cette image. Essaie une photo JPG, PNG ou une prise directe depuis l’appareil photo.'));
     };
 
     img.src = url;
