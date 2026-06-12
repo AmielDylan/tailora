@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 const AUTH_KEY = 'tailora-authenticated';
+const CREDENTIALS_KEY = 'tailora-credentials';
 const USER_PROFILE_KEY = 'tailora-user-profile';
 const STORAGE_KEY = 'tailora-mvp-state';
 const WORKSHOPS_KEY = 'tailora-workshops';
@@ -8,6 +9,10 @@ const ACTIVE_WORKSHOP_ID_KEY = 'tailora-active-workshop-id';
 const WORKSHOP_FEATURES_NOTICE_KEY = 'tailora-workshop-features-notice-dismissed';
 const WORKSHOP_MIGRATION_NOTICE_KEY = 'tailora-workshop-migration-dismissed';
 const PUBLIC_WORKSHOP_LOCAL_PREFIX = 'tailora-public-workshop:';
+const TINY_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=',
+  'base64',
+);
 
 const baseOrder = {
   id: 'order-e2e-1',
@@ -27,8 +32,13 @@ const baseOrder = {
 };
 
 async function seedLoggedIn(page: Page, state = { clients: [], orders: [] }) {
-  await page.addInitScript(({ authKey, profileKey, storageKey, appState }) => {
+  await page.addInitScript(({ authKey, credentialsKey, profileKey, storageKey, appState }) => {
     localStorage.setItem(authKey, 'true');
+    localStorage.setItem(credentialsKey, JSON.stringify({
+      phone: '+229 01 90 12 34 56',
+      authProvider: 'local',
+      updatedAt: '2026-06-11T00:00:00.000Z',
+    }));
     localStorage.setItem(profileKey, JSON.stringify({
       firstName: 'Awa',
       lastName: 'Test',
@@ -40,7 +50,7 @@ async function seedLoggedIn(page: Page, state = { clients: [], orders: [] }) {
       schemaVersion: 1,
       updatedAt: '2026-06-11T00:00:00.000Z',
     }));
-  }, { authKey: AUTH_KEY, profileKey: USER_PROFILE_KEY, storageKey: STORAGE_KEY, appState: state });
+  }, { authKey: AUTH_KEY, credentialsKey: CREDENTIALS_KEY, profileKey: USER_PROFILE_KEY, storageKey: STORAGE_KEY, appState: state });
 }
 
 async function seedWorkshop(page: Page, workshop = {}) {
@@ -161,6 +171,33 @@ test('creates a workshop then returns to dashboard with closable feature notice'
   await expect(page.getByRole('heading', { name: 'Nouvelles fonctionnalités atelier' })).toBeHidden();
 });
 
+test('uses the registration phone when workshop phone is empty', async ({ page }) => {
+  await seedLoggedIn(page);
+
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Atelier' }).click();
+  await page.getByLabel("Nom de l'atelier").fill('Atelier Sans Tel');
+  await page.getByLabel('Activer le profil public').check();
+  await page.getByRole('button', { name: "Créer l'atelier" }).click();
+
+  await page.goto('/atelier/atelier-sans-tel');
+  await expect(page.getByRole('heading', { name: 'Atelier Sans Tel' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Commander sur WhatsApp' })).toHaveAttribute('href', /https:\/\/wa\.me\/2290190123456\?text=/);
+});
+
+test('opens the banner palette and changes the workshop banner choice', async ({ page }) => {
+  await seedLoggedIn(page);
+  await seedWorkshop(page);
+
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Atelier' }).click();
+  await page.getByRole('button', { name: 'Choisir la couleur de bannière' }).click();
+
+  await expect(page.getByRole('dialog', { name: 'Couleur de bannière' })).toBeVisible();
+  await page.getByRole('button', { name: 'Bleu' }).click();
+  await expect(page.getByRole('dialog', { name: 'Couleur de bannière' })).toBeHidden();
+});
+
 test('migrates selected personal orders to the workshop', async ({ page }) => {
   await seedLoggedIn(page, {
     clients: [{ id: 'client-e2e-1', name: 'Amina Kora', phone: '+229 01 90 12 34 56', address: 'Cotonou' }],
@@ -206,6 +243,37 @@ test('shows a public workshop profile without requiring auth', async ({ page }) 
   await expect(page.getByRole('heading', { name: 'Atelier Awa' })).toBeVisible();
   await expect(page.getByText('Ouvert')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Commander sur WhatsApp' })).toHaveAttribute('href', /https:\/\/wa\.me\/2290190123456\?text=/);
+});
+
+test('updates time format settings and republishes the public profile', async ({ page }) => {
+  await seedLoggedIn(page);
+  await seedWorkshop(page);
+
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Paramètres' }).click();
+  await page.getByRole('button', { name: /Format 12h/ }).click();
+
+  await page.goto('/atelier/atelier-awa');
+  await expect(page.getByRole('main').getByText('12:00 AM - 11:59 PM').first()).toBeVisible();
+});
+
+test('publishes a compressed gallery image on the public workshop profile', async ({ page }) => {
+  await seedLoggedIn(page);
+  await seedWorkshop(page);
+
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Atelier' }).click();
+  await page.locator('input[type="file"]').setInputFiles({
+    name: 'realisation.png',
+    mimeType: 'image/png',
+    buffer: TINY_PNG,
+  });
+  await page.getByPlaceholder('Légende optionnelle').fill('Robe de cérémonie');
+  await page.getByRole('button', { name: 'Enregistrer' }).click();
+
+  await page.goto('/atelier/atelier-awa');
+  await expect(page.getByRole('heading', { name: 'Quelques réalisations' })).toBeVisible();
+  await expect(page.getByText('Robe de cérémonie')).toBeVisible();
 });
 
 test('switches calendar views and keeps personal/workshop distinction visible', async ({ page }) => {

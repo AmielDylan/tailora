@@ -8,6 +8,12 @@ export type UserProfile = {
   updatedAt: string;
 };
 
+export type TimeFormat = '24h' | '12h';
+
+export type TailoraSettings = {
+  timeFormat: TimeFormat;
+};
+
 export type Workshop = {
   id: string;
   name: string;
@@ -19,6 +25,7 @@ export type Workshop = {
   whatsappSignature?: string;
   bannerStyle?: string;
   publicLinks?: WorkshopLink[];
+  gallery?: WorkshopGalleryImage[];
   publicProfileEnabled?: boolean;
   coverImage?: string;
   profileImage?: string;
@@ -40,6 +47,13 @@ export type WorkshopLink = {
   url: string;
 };
 
+export type WorkshopGalleryImage = {
+  id: string;
+  src: string;
+  caption?: string;
+  createdAt: string;
+};
+
 export type PublicWorkshop = {
   id: string;
   ownerUid: string;
@@ -51,6 +65,8 @@ export type PublicWorkshop = {
   whatsappSignature?: string;
   bannerStyle?: string;
   publicLinks?: WorkshopLink[];
+  gallery?: WorkshopGalleryImage[];
+  timeFormat?: TimeFormat;
   updatedAt: string;
 };
 

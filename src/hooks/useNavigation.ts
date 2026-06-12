@@ -10,6 +10,7 @@ export type Route =
   | 'clients'
   | `clients/${string}`
   | 'workshop'
+  | 'settings'
   | 'profile';
 
 export function useNavigation() {
