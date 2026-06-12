@@ -1,9 +1,16 @@
-import { Plus, Trash2, X } from 'lucide-react';
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { ImageIcon, Loader2, Palette, Plus, Trash2, Upload, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Status } from '@/components/ui/status';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PageContent } from '@/components/layout/PageContent';
 import { WORKSHOP_FEATURES_NOTICE_KEY, WORKSHOP_MIGRATION_NOTICE_KEY } from '@/constants';
@@ -14,19 +21,82 @@ import {
   BANNER_STYLES,
   DAY_LABELS,
   currentWorkshopStatus,
-  defaultOpeningSchedule,
   normalizeOpeningSchedule,
   publicWorkshopUrl,
   publishPublicWorkshop,
   unpublishPublicWorkshop,
 } from '@/lib/workshop';
+import { getCurrentAuthPhone } from '@/lib/auth';
+import { compressImage, ImageTooLargeError, ImageUnsupportedError } from '@/lib/image';
 import { uid } from '@/helpers';
-import type { OpeningDay, WorkshopLink } from '@/types';
+import type { OpeningDay, WorkshopGalleryImage, WorkshopLink } from '@/types';
+
+const GALLERY_LIMIT = 6;
+const HOUR_OPTIONS = Array.from({ length: 24 }, (_, hour) => String(hour).padStart(2, '0'));
+const BASE_MINUTE_OPTIONS = ['00', '15', '30', '45'];
+
+function splitTime(value: string) {
+  const [hour = '09', minute = '00'] = value.split(':');
+  return {
+    hour: hour.padStart(2, '0'),
+    minute: minute.padStart(2, '0'),
+  };
+}
+
+function buildTime(hour: string, minute: string) {
+  return `${hour}:${minute}`;
+}
+
+function minuteOptions(value: string) {
+  const { minute } = splitTime(value);
+  return BASE_MINUTE_OPTIONS.includes(minute)
+    ? BASE_MINUTE_OPTIONS
+    : [...BASE_MINUTE_OPTIONS, minute].sort();
+}
+
+function TimeSelect({
+  value,
+  disabled,
+  onChange,
+  label,
+}: {
+  value: string;
+  disabled?: boolean;
+  onChange: (value: string) => void;
+  label: string;
+}) {
+  const { hour, minute } = splitTime(value);
+
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      <label className="sr-only">{label} heure</label>
+      <select
+        value={hour}
+        disabled={disabled}
+        onChange={(event) => onChange(buildTime(event.target.value, minute))}
+        className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none disabled:opacity-50"
+      >
+        {HOUR_OPTIONS.map((option) => <option key={option} value={option}>{option}h</option>)}
+      </select>
+      <label className="sr-only">{label} minutes</label>
+      <select
+        value={minute}
+        disabled={disabled}
+        onChange={(event) => onChange(buildTime(hour, event.target.value))}
+        className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none disabled:opacity-50"
+      >
+        {minuteOptions(value).map((option) => <option key={option} value={option}>{option}</option>)}
+      </select>
+    </div>
+  );
+}
 
 export function WorkshopPage() {
   const { activeWorkshop, saveActiveWorkshop, deleteActiveWorkshop } = useAccountContext();
   const { orders, moveWorkshopOrdersToPersonal } = useAppDataContext();
   const nav = useNavigationContext();
+  const registeredPhone = getCurrentAuthPhone();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [name, setName] = useState(activeWorkshop?.name ?? '');
   const [address, setAddress] = useState(activeWorkshop?.address ?? '');
@@ -36,6 +106,10 @@ export function WorkshopPage() {
   const [bannerStyle, setBannerStyle] = useState(activeWorkshop?.bannerStyle ?? BANNER_STYLES[0].value);
   const [publicProfileEnabled, setPublicProfileEnabled] = useState(activeWorkshop?.publicProfileEnabled ?? false);
   const [publicLinks, setPublicLinks] = useState<WorkshopLink[]>(activeWorkshop?.publicLinks ?? []);
+  const [gallery, setGallery] = useState<WorkshopGalleryImage[]>(activeWorkshop?.gallery ?? []);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [galleryUploading, setGalleryUploading] = useState(false);
+  const [galleryError, setGalleryError] = useState('');
   const [message, setMessage] = useState('');
 
   const workshopStatus = useMemo(
@@ -53,6 +127,8 @@ export function WorkshopPage() {
     setBannerStyle(activeWorkshop?.bannerStyle ?? BANNER_STYLES[0].value);
     setPublicProfileEnabled(activeWorkshop?.publicProfileEnabled ?? false);
     setPublicLinks(activeWorkshop?.publicLinks ?? []);
+    setGallery(activeWorkshop?.gallery ?? []);
+    setGalleryError('');
     setMessage('');
   }, [activeWorkshop]);
 
@@ -76,6 +152,47 @@ export function WorkshopPage() {
     setPublicLinks((current) => current.filter((link) => link.id !== id));
   }
 
+  async function addGalleryImage(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (gallery.length >= GALLERY_LIMIT) {
+      setGalleryError(`La mini galerie est limitée à ${GALLERY_LIMIT} images.`);
+      return;
+    }
+
+    setGalleryError('');
+    setGalleryUploading(true);
+    try {
+      const src = await compressImage(file);
+      setGallery((current) => [
+        ...current,
+        {
+          id: uid('gallery'),
+          src,
+          caption: '',
+          createdAt: new Date().toISOString(),
+        },
+      ]);
+    } catch (error) {
+      setGalleryError(error instanceof ImageTooLargeError || error instanceof ImageUnsupportedError
+        ? error.message
+        : 'Impossible de lire cette image.');
+    } finally {
+      setGalleryUploading(false);
+    }
+  }
+
+  function updateGalleryImage(id: string, patch: Partial<WorkshopGalleryImage>) {
+    setGallery((current) => current.map((image) => (
+      image.id === id ? { ...image, ...patch } : image
+    )));
+  }
+
+  function removeGalleryImage(id: string) {
+    setGallery((current) => current.filter((image) => image.id !== id));
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setMessage('');
@@ -89,6 +206,7 @@ export function WorkshopPage() {
       whatsappSignature,
       bannerStyle,
       publicProfileEnabled,
+      gallery: gallery.map((image) => ({ ...image, caption: image.caption?.trim() ?? '' })),
       publicLinks: publicLinks
         .map((link) => ({ ...link, label: link.label.trim(), url: link.url.trim() }))
         .filter((link) => link.label && link.url),
@@ -147,7 +265,19 @@ export function WorkshopPage() {
               <h2 className="font-heading text-2xl font-medium tracking-normal">{name || activeWorkshop?.name || 'Votre atelier'}</h2>
               {address && <p className="mt-1 text-sm opacity-90">{address}</p>}
             </div>
-            <Status tone={workshopStatus.state} label={workshopStatus.label} detail={workshopStatus.detail} className="border-white/25 bg-white/15 text-white" />
+            <div className="flex flex-wrap items-center gap-2">
+              <Status tone={workshopStatus.state} label={workshopStatus.label} detail={workshopStatus.detail} variant="banner" />
+              <Button
+                type="button"
+                size="icon"
+                variant="secondary"
+                onClick={() => setPaletteOpen(true)}
+                aria-label="Choisir la couleur de bannière"
+                className="rounded-full border border-white/80 bg-white text-zinc-950 shadow-sm hover:bg-white/90"
+              >
+                <Palette strokeWidth={1.25} />
+              </Button>
+            </div>
           </div>
         </section>
 
@@ -166,6 +296,9 @@ export function WorkshopPage() {
               <label className="block space-y-1.5">
                 <span className="text-sm font-medium text-foreground">Téléphone WhatsApp professionnel</span>
                 <Input type="tel" inputMode="tel" value={professionalPhone} onChange={(e) => setProfessionalPhone(e.target.value)} placeholder="+229 01 90 00 00 00" className="h-11 bg-background" />
+                <span className="text-xs text-muted-foreground">
+                  {registeredPhone ? `Si vide, Tailora utilisera votre numéro de connexion : ${registeredPhone}.` : 'Si vide, Tailora utilisera votre numéro de connexion.'}
+                </span>
               </label>
             </section>
 
@@ -179,8 +312,8 @@ export function WorkshopPage() {
                       {DAY_LABELS[day.day]}
                     </label>
                     <span className="text-xs text-muted-foreground">{day.open ? 'Ouvert' : 'Fermé'}</span>
-                    <Input type="time" value={day.start} disabled={!day.open} onChange={(e) => updateOpeningDay(day.day, { start: e.target.value })} />
-                    <Input type="time" value={day.end} disabled={!day.open} onChange={(e) => updateOpeningDay(day.day, { end: e.target.value })} />
+                    <TimeSelect label={`${DAY_LABELS[day.day]} début`} value={day.start} disabled={!day.open} onChange={(value) => updateOpeningDay(day.day, { start: value })} />
+                    <TimeSelect label={`${DAY_LABELS[day.day]} fin`} value={day.end} disabled={!day.open} onChange={(value) => updateOpeningDay(day.day, { end: value })} />
                     <Input
                       value={day.note ?? ''}
                       disabled={!day.open}
@@ -217,24 +350,63 @@ export function WorkshopPage() {
                 </div>
               )}
             </section>
+
+            <section className="space-y-4 rounded-lg border border-border/70 bg-card p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h3 className="text-sm font-medium text-foreground">Mini galerie</h3>
+                  <p className="text-sm text-muted-foreground">Montrez quelques travaux sur votre page publique.</p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={galleryUploading || gallery.length >= GALLERY_LIMIT}
+                >
+                  {galleryUploading ? <Loader2 data-icon="inline-start" className="animate-spin" strokeWidth={1.25} /> : <Upload data-icon="inline-start" strokeWidth={1.25} />}
+                  Ajouter
+                </Button>
+              </div>
+              <input ref={fileInputRef} type="file" accept="image/*,.heic,.heif" className="hidden" onChange={addGalleryImage} />
+              {galleryError && <p className="text-sm text-destructive">{galleryError}</p>}
+              {gallery.length === 0 ? (
+                <div className="flex min-h-32 flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border/70 text-center text-sm text-muted-foreground">
+                  <ImageIcon className="size-5" strokeWidth={1.25} />
+                  Aucune image dans la galerie.
+                </div>
+              ) : (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {gallery.map((image) => (
+                    <div key={image.id} className="overflow-hidden rounded-lg border border-border/70 bg-background">
+                      <div className="relative aspect-video bg-muted">
+                        <img src={image.src} alt={image.caption || 'Travail atelier'} className="h-full w-full object-cover" />
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="icon"
+                          onClick={() => removeGalleryImage(image.id)}
+                          aria-label="Supprimer l'image"
+                          className="absolute right-2 top-2 size-8 rounded-full bg-white text-zinc-950 hover:bg-white/90"
+                        >
+                          <X strokeWidth={1.25} />
+                        </Button>
+                      </div>
+                      <Input
+                        value={image.caption ?? ''}
+                        onChange={(event) => updateGalleryImage(image.id, { caption: event.target.value })}
+                        placeholder="Légende optionnelle"
+                        className="rounded-none border-0 border-t bg-background"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">{gallery.length}/{GALLERY_LIMIT} images.</p>
+            </section>
           </div>
 
           <aside className="flex flex-col gap-5">
-            <section className="space-y-4 rounded-lg border border-border/70 bg-card p-4">
-              <h3 className="text-sm font-medium text-foreground">Apparence</h3>
-              <div className="grid grid-cols-2 gap-2">
-                {BANNER_STYLES.map((style) => (
-                  <button
-                    key={style.value}
-                    type="button"
-                    onClick={() => setBannerStyle(style.value)}
-                    className={`h-16 rounded-lg border-2 bg-gradient-to-br ${style.value} ${bannerStyle === style.value ? 'border-foreground' : 'border-transparent'}`}
-                    aria-label={style.label}
-                  />
-                ))}
-              </div>
-            </section>
-
             <section className="space-y-4 rounded-lg border border-border/70 bg-card p-4">
               <h3 className="text-sm font-medium text-foreground">WhatsApp et profil public</h3>
               <label className="block space-y-1.5">
@@ -267,6 +439,33 @@ export function WorkshopPage() {
           </aside>
         </form>
       </PageContent>
+
+      <Dialog open={paletteOpen} onOpenChange={setPaletteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Couleur de bannière</DialogTitle>
+            <DialogDescription>
+              Choisissez une ambiance simple pour votre profil atelier public.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {BANNER_STYLES.map((style) => (
+              <button
+                key={style.value}
+                type="button"
+                onClick={() => {
+                  setBannerStyle(style.value);
+                  setPaletteOpen(false);
+                }}
+                className={`h-20 rounded-lg border-2 bg-gradient-to-br ${style.value} ${bannerStyle === style.value ? 'border-foreground' : 'border-transparent'}`}
+                aria-label={style.label}
+              >
+                <span className="sr-only">{style.label}</span>
+              </button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

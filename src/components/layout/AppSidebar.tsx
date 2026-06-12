@@ -1,4 +1,4 @@
-import { CalendarDays, LayoutDashboard, Lock, LogOut, Package, Scissors, Store, User, Users } from 'lucide-react';
+import { CalendarDays, LayoutDashboard, Lock, LogOut, Package, Scissors, Settings, Store, User, Users } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -85,6 +85,16 @@ export function AppSidebar({ onLock, onLogout, pinEnabled }: { onLock: () => voi
             >
               <User strokeWidth={1.25} />
               <span>Profil</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              isActive={activeSection === 'settings'}
+              onClick={() => navigate('settings')}
+              className="h-9 gap-3 rounded-lg px-3"
+            >
+              <Settings strokeWidth={1.25} />
+              <span>Paramètres</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
           {pinEnabled && (

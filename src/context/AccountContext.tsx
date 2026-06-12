@@ -1,8 +1,9 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
 import { ACTIVE_WORKSHOP_ID_KEY, USER_PROFILE_KEY, WORKSHOPS_KEY } from '@/constants';
 import { uid } from '@/helpers';
+import { getCurrentAuthPhone } from '@/lib/auth';
 import { BANNER_STYLES, normalizeOpeningSchedule, slugifyWorkshopName, unpublishPublicWorkshop } from '@/lib/workshop';
-import type { OpeningDay, UserProfile, Workshop, WorkshopLink } from '@/types';
+import type { OpeningDay, UserProfile, Workshop, WorkshopGalleryImage, WorkshopLink } from '@/types';
 
 type ProfileInput = {
   firstName: string;
@@ -18,6 +19,7 @@ type WorkshopInput = {
   whatsappSignature?: string;
   bannerStyle?: string;
   publicLinks?: WorkshopLink[];
+  gallery?: WorkshopGalleryImage[];
   publicProfileEnabled?: boolean;
 };
 
@@ -53,6 +55,7 @@ function normalizeWorkshop(workshop: Workshop): Workshop {
     whatsappSignature: workshop.whatsappSignature ?? '',
     bannerStyle: workshop.bannerStyle ?? BANNER_STYLES[0].value,
     publicLinks: workshop.publicLinks ?? [],
+    gallery: workshop.gallery ?? [],
     publicProfileEnabled: workshop.publicProfileEnabled ?? false,
     coverImage: workshop.coverImage ?? '',
     profileImage: workshop.profileImage ?? '',
@@ -108,12 +111,13 @@ export function AccountProvider({ children }: { children: ReactNode }) {
       name,
       slug: slugifyWorkshopName(name),
       address: input.address?.trim() ?? '',
-      professionalPhone: input.professionalPhone?.trim() ?? '',
+      professionalPhone: input.professionalPhone?.trim() || getCurrentAuthPhone(),
       openingDays: input.openingDays?.trim() ?? '',
       openingSchedule: normalizeOpeningSchedule(input.openingSchedule, input.openingDays),
       whatsappSignature: input.whatsappSignature?.trim() ?? '',
       bannerStyle: input.bannerStyle ?? BANNER_STYLES[0].value,
       publicLinks: input.publicLinks ?? [],
+      gallery: input.gallery ?? [],
       publicProfileEnabled: input.publicProfileEnabled ?? false,
       coverImage: '',
       profileImage: '',
@@ -138,12 +142,13 @@ export function AccountProvider({ children }: { children: ReactNode }) {
       name,
       slug: activeWorkshop.slug ?? slugifyWorkshopName(name),
       address: input.address?.trim() ?? '',
-      professionalPhone: input.professionalPhone?.trim() ?? '',
+      professionalPhone: input.professionalPhone?.trim() || getCurrentAuthPhone(),
       openingDays: input.openingDays?.trim() ?? '',
       openingSchedule: normalizeOpeningSchedule(input.openingSchedule, input.openingDays),
       whatsappSignature: input.whatsappSignature?.trim() ?? '',
       bannerStyle: input.bannerStyle ?? activeWorkshop.bannerStyle ?? BANNER_STYLES[0].value,
       publicLinks: input.publicLinks ?? activeWorkshop.publicLinks ?? [],
+      gallery: input.gallery ?? activeWorkshop.gallery ?? [],
       publicProfileEnabled: input.publicProfileEnabled ?? activeWorkshop.publicProfileEnabled ?? false,
       updatedAt: new Date().toISOString(),
     };

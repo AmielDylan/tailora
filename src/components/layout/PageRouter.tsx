@@ -9,6 +9,7 @@ import { ClientListPage } from '@/pages/ClientListPage';
 import { ClientDetailPage } from '@/pages/ClientDetailPage';
 import { WorkshopPage } from '@/pages/WorkshopPage';
 import { ProfilePage } from '@/pages/ProfilePage';
+import { SettingsPage } from '@/pages/SettingsPage';
 
 export function PageRouter({ onLock: _onLock }: { onLock: () => void }) {
   const { current } = useNavigationContext();
@@ -31,6 +32,8 @@ export function PageRouter({ onLock: _onLock }: { onLock: () => void }) {
   }
 
   if (current === 'workshop') return <WorkshopPage />;
+
+  if (current === 'settings') return <SettingsPage />;
 
   if (current === 'profile') return <ProfilePage />;
 

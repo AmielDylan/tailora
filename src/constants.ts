@@ -15,6 +15,7 @@ export const CREDENTIALS_KEY = 'tailora-credentials';
 export const USER_PROFILE_KEY = 'tailora-user-profile';
 export const WORKSHOPS_KEY = 'tailora-workshops';
 export const ACTIVE_WORKSHOP_ID_KEY = 'tailora-active-workshop-id';
+export const SETTINGS_KEY = 'tailora-settings';
 export const PIN_ENABLED_KEY = 'tailora-pin-enabled';
 export const LAST_ACTIVE_KEY = 'tailora-last-active';
 export const LOCK_TIMEOUT_KEY = 'tailora-lock-timeout'; // minutes, 0 = manual only
