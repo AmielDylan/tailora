@@ -107,6 +107,10 @@ function readStoredCredentials(): StoredCredentials | null {
   }
 }
 
+export function getCurrentAuthPhone() {
+  return readStoredCredentials()?.phone ?? '';
+}
+
 function randomSalt() {
   const bytes = new Uint8Array(16);
   crypto.getRandomValues(bytes);

@@ -1,6 +1,7 @@
 import { deleteDoc, doc, getDoc, setDoc } from 'firebase/firestore';
 import { getFirebaseServices } from '@/lib/firebase';
-import type { OpeningDay, PublicWorkshop, Workshop } from '@/types';
+import { loadSettings, formatTimeRange } from '@/lib/settings';
+import type { OpeningDay, PublicWorkshop, TimeFormat, Workshop } from '@/types';
 
 export const DAY_LABELS = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 
@@ -64,7 +65,11 @@ export function normalizeOpeningSchedule(schedule?: OpeningDay[], legacy?: strin
   }));
 }
 
-export function currentWorkshopStatus(workshop?: Pick<Workshop, 'openingSchedule' | 'openingDays'> | null, now = new Date()) {
+export function currentWorkshopStatus(
+  workshop?: Pick<Workshop, 'openingSchedule' | 'openingDays'> | null,
+  now = new Date(),
+  timeFormat: TimeFormat = loadSettings().timeFormat,
+) {
   const schedule = normalizeOpeningSchedule(workshop?.openingSchedule, workshop?.openingDays);
   const today = schedule.find((day) => day.day === now.getDay());
   if (!today) return { state: 'unknown' as const, label: 'Horaires non renseignés' };
@@ -75,7 +80,7 @@ export function currentWorkshopStatus(workshop?: Pick<Workshop, 'openingSchedule
   return {
     state: isOpen ? 'open' as const : 'closed' as const,
     label: isOpen ? 'Ouvert' : 'Fermé',
-    detail: `${today.start} - ${today.end}`,
+    detail: formatTimeRange(today.start, today.end, timeFormat),
   };
 }
 
@@ -100,6 +105,7 @@ export async function publishPublicWorkshop(workshop: Workshop) {
   const services = getFirebaseServices();
   const user = services?.auth.currentUser;
   if (!workshop.slug) return null;
+  const settings = loadSettings();
 
   const payload: PublicWorkshop = {
     id: workshop.id,
@@ -112,6 +118,8 @@ export async function publishPublicWorkshop(workshop: Workshop) {
     whatsappSignature: workshop.whatsappSignature ?? workshop.name,
     bannerStyle: workshop.bannerStyle ?? BANNER_STYLES[0].value,
     publicLinks: workshop.publicLinks ?? [],
+    gallery: workshop.gallery ?? [],
+    timeFormat: settings.timeFormat,
     updatedAt: new Date().toISOString(),
   };
 
