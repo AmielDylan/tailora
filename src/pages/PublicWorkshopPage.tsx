@@ -1,6 +1,13 @@
 import { ExternalLink } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Status } from '@/components/ui/status';
 import { WhatsAppIcon } from '@/components/icons/WhatsAppIcon';
 import { DAY_LABELS, currentWorkshopStatus, loadPublicWorkshop } from '@/lib/workshop';
@@ -31,6 +38,8 @@ export function PublicWorkshopPage({ slug }: { slug: string }) {
     ? whatsappUrl(workshop.professionalPhone, `Bonjour ${workshop.name}, je souhaite passer une commande.`)
     : '';
   const gallery = workshop?.gallery ?? [];
+  const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
+  const selectedImage = gallery.find((image) => image.id === selectedImageId) ?? null;
 
   if (loading) {
     return (
@@ -53,20 +62,22 @@ export function PublicWorkshopPage({ slug }: { slug: string }) {
 
   return (
     <main className="min-h-screen bg-background">
-      <section className={`bg-gradient-to-br ${workshop.bannerStyle || 'from-emerald-600 to-teal-500'} px-5 py-10 text-white`}>
-        <div className="mx-auto flex max-w-4xl flex-col gap-4">
-          <p className="text-sm font-medium opacity-90">Atelier couture</p>
-          <h1 className="font-heading text-4xl font-medium tracking-normal">{workshop.name}</h1>
-          {workshop.address && <p className="text-sm opacity-90">{workshop.address}</p>}
-          <Status tone={status.state} label={status.label} detail={status.detail} variant="banner" className="w-fit" />
-          {whatsappHref && (
-            <Button asChild className="mt-2 w-fit rounded-full bg-[#25D366] text-white shadow-sm hover:bg-[#1ebe5d]">
-              <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
-                <WhatsAppIcon data-icon="inline-start" className="size-4" />
-                Commander sur WhatsApp
-              </a>
-            </Button>
-          )}
+      <section className={`relative overflow-hidden bg-gradient-to-br ${workshop.bannerStyle || 'from-emerald-600 to-teal-500'} px-5 py-10 text-white`}>
+        <div className="absolute inset-0 bg-black/35" aria-hidden="true" />
+        <div className="relative mx-auto flex max-w-4xl flex-col gap-4">
+          <h1 className="font-heading text-4xl font-medium tracking-normal text-white drop-shadow-sm">{workshop.name}</h1>
+          {workshop.address && <p className="text-sm text-white/95 drop-shadow-sm">{workshop.address}</p>}
+          <div className="flex flex-wrap items-center gap-2">
+            <Status tone={status.state} label={status.label} detail={status.detail} variant="banner" className="min-h-9" />
+            {whatsappHref && (
+              <Button asChild className="min-h-9 rounded-full border border-white/80 bg-white px-3 text-zinc-950 shadow-sm hover:bg-zinc-100 hover:text-zinc-950">
+                <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
+                  <WhatsAppIcon data-icon="inline-start" className="size-4 text-[#25D366]" />
+                  Commander sur WhatsApp
+                </a>
+              </Button>
+            )}
+          </div>
         </div>
       </section>
 
@@ -74,21 +85,18 @@ export function PublicWorkshopPage({ slug }: { slug: string }) {
         <section className="mx-auto max-w-4xl px-5 py-6">
           <div className="space-y-3">
             <h2 className="text-sm font-medium text-foreground">Quelques réalisations</h2>
-            <div className="grid gap-3 md:grid-cols-[1.4fr_1fr]">
-              <figure className="overflow-hidden rounded-lg border border-border/70 bg-card">
-                <img src={gallery[0].src} alt={gallery[0].caption || 'Réalisation atelier'} className="aspect-[4/3] w-full object-cover" />
-                {gallery[0].caption && <figcaption className="px-3 py-2 text-sm text-muted-foreground">{gallery[0].caption}</figcaption>}
-              </figure>
-              {gallery.length > 1 && (
-                <div className="grid grid-cols-2 gap-3">
-                  {gallery.slice(1).map((image) => (
-                    <figure key={image.id} className="overflow-hidden rounded-lg border border-border/70 bg-card">
-                      <img src={image.src} alt={image.caption || 'Réalisation atelier'} className="aspect-square w-full object-cover" />
-                      {image.caption && <figcaption className="truncate px-2 py-1.5 text-xs text-muted-foreground">{image.caption}</figcaption>}
-                    </figure>
-                  ))}
-                </div>
-              )}
+            <div className="-mx-5 flex snap-x gap-3 overflow-x-auto px-5 pb-2">
+              {gallery.map((image) => (
+                <button
+                  key={image.id}
+                  type="button"
+                  onClick={() => setSelectedImageId(image.id)}
+                  className="min-w-[72%] snap-start overflow-hidden rounded-lg border border-border/70 bg-card text-left shadow-sm transition-colors hover:bg-muted sm:min-w-64"
+                >
+                  <img src={image.src} alt={image.caption || 'Réalisation atelier'} className="aspect-[4/3] w-full object-cover" />
+                  {image.caption && <span className="block truncate px-3 py-2 text-sm text-muted-foreground">{image.caption}</span>}
+                </button>
+              ))}
             </div>
           </div>
         </section>
@@ -123,6 +131,21 @@ export function PublicWorkshopPage({ slug }: { slug: string }) {
           )}
         </aside>
       </section>
+
+      <Dialog open={Boolean(selectedImage)} onOpenChange={(open) => { if (!open) setSelectedImageId(null); }}>
+        <DialogContent className="max-w-3xl p-0">
+          <DialogHeader className="sr-only">
+            <DialogTitle>{selectedImage?.caption || 'Réalisation atelier'}</DialogTitle>
+            <DialogDescription>Aperçu agrandi d'une réalisation de l'atelier.</DialogDescription>
+          </DialogHeader>
+          {selectedImage && (
+            <figure className="overflow-hidden rounded-lg bg-background">
+              <img src={selectedImage.src} alt={selectedImage.caption || 'Réalisation atelier'} className="max-h-[78vh] w-full object-contain" />
+              {selectedImage.caption && <figcaption className="border-t border-border px-4 py-3 text-sm text-muted-foreground">{selectedImage.caption}</figcaption>}
+            </figure>
+          )}
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }

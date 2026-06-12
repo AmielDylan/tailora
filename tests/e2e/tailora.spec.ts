@@ -241,6 +241,7 @@ test('shows a public workshop profile without requiring auth', async ({ page }) 
   await page.goto('/atelier/atelier-awa');
 
   await expect(page.getByRole('heading', { name: 'Atelier Awa' })).toBeVisible();
+  await expect(page.getByText('Atelier couture')).toBeHidden();
   await expect(page.getByText('Ouvert')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Commander sur WhatsApp' })).toHaveAttribute('href', /https:\/\/wa\.me\/2290190123456\?text=/);
 });
@@ -274,6 +275,10 @@ test('publishes a compressed gallery image on the public workshop profile', asyn
   await page.goto('/atelier/atelier-awa');
   await expect(page.getByRole('heading', { name: 'Quelques réalisations' })).toBeVisible();
   await expect(page.getByText('Robe de cérémonie')).toBeVisible();
+  await page.getByRole('button', { name: /Robe de cérémonie/ }).click();
+  await expect(page.getByRole('dialog', { name: 'Robe de cérémonie' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog', { name: 'Robe de cérémonie' })).toBeHidden();
 });
 
 test('switches calendar views and keeps personal/workshop distinction visible', async ({ page }) => {
