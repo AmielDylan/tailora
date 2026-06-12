@@ -70,7 +70,7 @@ export function PublicWorkshopPage({ slug }: { slug: string }) {
           <div className="flex flex-wrap items-center gap-2">
             <Status tone={status.state} label={status.label} detail={status.detail} variant="banner" className="min-h-9" />
             {whatsappHref && (
-              <Button asChild className="min-h-9 rounded-full border border-white/80 bg-white px-3 text-zinc-950 shadow-sm hover:bg-zinc-100 hover:text-zinc-950">
+              <Button asChild className="min-h-9 rounded-full border border-white/80 bg-white px-3 text-zinc-950 shadow-sm">
                 <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
                   <WhatsAppIcon data-icon="inline-start" className="size-4 text-[#25D366]" />
                   Commander sur WhatsApp
