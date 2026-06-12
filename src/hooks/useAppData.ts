@@ -3,12 +3,14 @@ import type { Client, Order, Status } from '@/types';
 import { STATUSES } from '@/constants';
 import { today, isLate, balance } from '@/helpers';
 import {
+  createStateRecord,
   hasAppData,
   loadStateRecord,
+  mergeStateRecords,
   saveRemoteState,
-  saveState,
+  saveStateRecord,
   subscribeRemoteState,
-  type AppState,
+  type RemoteAppState,
 } from '@/lib/storage';
 import { getFirebaseServices } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -27,24 +29,24 @@ export function useAppData() {
   const [toast, setToast] = useState('');
   const initialized = useRef(false);
   const currentUid = useRef<string | null>(null);
-  const latestState = useRef<AppState>({ clients: [], orders: [] });
-  const localUpdatedAt = useRef('');
+  const latestRecord = useRef<RemoteAppState>(initialRecord.current);
   const skipNextPersist = useRef(false);
 
-  function applyRemoteState(state: AppState, updatedAt: string) {
+  function recordsEqual(a: RemoteAppState, b: RemoteAppState) {
+    return JSON.stringify(a) === JSON.stringify(b);
+  }
+
+  function applyRecord(record: RemoteAppState) {
     skipNextPersist.current = true;
-    latestState.current = state;
-    localUpdatedAt.current = updatedAt;
-    saveState(state, updatedAt);
-    setClients(state.clients);
-    setOrders(state.orders);
-    setSelectedClientId(state.clients[0]?.id ?? null);
+    latestRecord.current = record;
+    saveStateRecord(record);
+    setClients(record.state.clients);
+    setOrders(record.state.orders);
+    setSelectedClientId(record.state.clients[0]?.id ?? null);
   }
 
   useEffect(() => {
-    const { state, updatedAt } = initialRecord.current;
-    latestState.current = state;
-    localUpdatedAt.current = updatedAt;
+    latestRecord.current = initialRecord.current;
     initialized.current = true;
 
     const services = getFirebaseServices();
@@ -58,23 +60,15 @@ export function useAppData() {
       if (!user) return;
 
       unsubscribeRemote = subscribeRemoteState(user.uid, (remote) => {
-        const local = latestState.current;
+        const local = latestRecord.current;
         if (!remote) {
-          if (hasAppData(local)) void saveRemoteState(user.uid, local, localUpdatedAt.current || undefined);
+          if (hasAppData(local.state)) void saveRemoteState(user.uid, local);
           return;
         }
 
-        const localHasNewerData =
-          hasAppData(local) &&
-          Boolean(localUpdatedAt.current) &&
-          (!remote.updatedAt || localUpdatedAt.current > remote.updatedAt);
-
-        if (localHasNewerData) {
-          void saveRemoteState(user.uid, local, localUpdatedAt.current);
-          return;
-        }
-
-        applyRemoteState(remote.state, remote.updatedAt);
+        const merged = mergeStateRecords(local, remote);
+        applyRecord(merged);
+        if (!recordsEqual(merged, remote)) void saveRemoteState(user.uid, merged);
       }, () => {
         currentUid.current = null;
       });
@@ -89,19 +83,19 @@ export function useAppData() {
   useEffect(() => {
     if (!initialized.current) return;
     const state = { clients, orders };
-    latestState.current = state;
 
     if (skipNextPersist.current) {
       skipNextPersist.current = false;
       return;
     }
 
-    const updatedAt = saveState(state);
-    localUpdatedAt.current = updatedAt;
+    const record = createStateRecord(state, latestRecord.current);
+    latestRecord.current = record;
+    saveStateRecord(record);
 
     if (!currentUid.current) return;
     const syncTimer = window.setTimeout(() => {
-      if (currentUid.current) void saveRemoteState(currentUid.current, state, updatedAt);
+      if (currentUid.current) void saveRemoteState(currentUid.current, record);
     }, 300);
 
     return () => window.clearTimeout(syncTimer);

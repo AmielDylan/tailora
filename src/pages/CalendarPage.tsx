@@ -129,14 +129,48 @@ function OrderChip({ order, onOpen, compact = false }: { order: Order; onOpen: (
   );
 }
 
+function MonthMobileSummary({ orders, onOpen }: { orders: Order[]; onOpen: (id: string) => void }) {
+  if (orders.length === 0) return null;
+
+  return (
+    <div className="border-t border-border/70 p-3 sm:hidden">
+      <h2 className="mb-3 text-sm font-medium text-foreground">Livraisons du mois</h2>
+      <div className="flex flex-col gap-2">
+        {orders.map((order) => (
+          <div key={order.id} className="grid grid-cols-[4.5rem_1fr] items-start gap-2">
+            <p className="pt-2 text-xs font-medium text-muted-foreground">{dateLabel(order.deliveryAt)}</p>
+            <OrderChip order={order} onOpen={onOpen} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function DayColumn({ date, orders, onOpen, muted = false }: { date: Date; orders: Order[]; onOpen: (id: string) => void; muted?: boolean }) {
   return (
-    <div className={cn('min-h-36 border-b border-r border-border/70 p-2 last:border-r-0', muted && 'bg-muted/20 text-muted-foreground/60')}>
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="text-sm font-medium">{date.getDate()}</span>
-        {orders.length > 0 && <span className="text-[0.65rem] tabular-nums text-muted-foreground">{orders.length}</span>}
+    <div className={cn('min-h-16 border-b border-r border-border/70 p-1.5 last:border-r-0 sm:min-h-36 sm:p-2', muted && 'bg-muted/20 text-muted-foreground/60')}>
+      <div className="mb-1.5 flex items-center justify-between gap-1 sm:mb-2 sm:gap-2">
+        <span className="text-xs font-medium sm:text-sm">{date.getDate()}</span>
+        {orders.length > 0 && <span className="text-[0.6rem] tabular-nums text-muted-foreground sm:text-[0.65rem]">{orders.length}</span>}
       </div>
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-wrap gap-1 sm:hidden">
+        {orders.slice(0, 3).map((order) => (
+          <button
+            key={order.id}
+            type="button"
+            onClick={() => onOpen(order.id)}
+            aria-label={`Ouvrir la commande de ${order.clientName}`}
+            className={cn(
+              'size-2.5 rounded-full border',
+              (order.scope ?? 'personal') === 'workshop' ? 'border-sky-700 bg-sky-600' : 'border-zinc-700 bg-zinc-500',
+              isLate(order) && 'border-red-700 bg-red-600',
+            )}
+          />
+        ))}
+        {orders.length > 3 && <span className="text-[0.6rem] font-medium leading-none text-muted-foreground">+{orders.length - 3}</span>}
+      </div>
+      <div className="hidden flex-col gap-1.5 sm:flex">
         {orders.slice(0, 3).map((order) => <OrderChip key={order.id} order={order} compact onOpen={onOpen} />)}
         {orders.length > 3 && <span className="text-xs font-medium text-muted-foreground">+{orders.length - 3} autre{orders.length - 3 > 1 ? 's' : ''}</span>}
       </div>
@@ -212,7 +246,7 @@ export function CalendarPage() {
         {view === 'month' && (
           <section className="overflow-hidden rounded-lg border border-border/70 bg-card">
             <div className="grid grid-cols-7 border-b border-border bg-muted/50">
-              {WEEK_DAYS.map((day) => <div key={day} className="px-3 py-2 text-xs font-medium text-muted-foreground">{day}</div>)}
+              {WEEK_DAYS.map((day) => <div key={day} className="px-1.5 py-2 text-center text-[0.65rem] font-medium text-muted-foreground sm:px-3 sm:text-left sm:text-xs">{day}</div>)}
             </div>
             <div className="grid grid-cols-7">
               {cells.map((date) => (
@@ -225,6 +259,7 @@ export function CalendarPage() {
                 />
               ))}
             </div>
+            <MonthMobileSummary orders={monthOrders} onOpen={(id) => nav.push(`orders/${id}`)} />
           </section>
         )}
 
