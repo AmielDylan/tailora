@@ -309,6 +309,37 @@ test('switches calendar views and keeps personal/workshop distinction visible', 
   await expect(page.getByText('Prochaines livraisons')).toBeVisible();
 });
 
+test('keeps month calendar readable on mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seedLoggedIn(page, {
+    clients: [{ id: 'client-e2e-1', name: 'Amina Kora', phone: '+229 01 90 12 34 56', address: 'Cotonou' }],
+    orders: [
+      { ...baseOrder, scope: 'personal' },
+      {
+        ...baseOrder,
+        id: 'order-e2e-2',
+        clientName: 'Safi Bio',
+        deliveryAt: '2026-06-19',
+        scope: 'workshop',
+        workshopId: 'w-e2e-1',
+      },
+    ],
+  });
+  await seedWorkshop(page);
+
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Toggle Sidebar' }).click();
+  await page.getByRole('button', { name: 'Calendrier' }).click();
+  await page.keyboard.press('Escape');
+
+  await expect(page.getByRole('heading', { name: 'Livraisons du mois' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Amina Kora/ }).last()).toBeVisible();
+  await expect(page.getByRole('button', { name: /Safi Bio/ }).last()).toBeVisible();
+
+  const overflow = await page.locator('main').evaluate((node) => node.scrollWidth > node.clientWidth + 1);
+  expect(overflow).toBe(false);
+});
+
 test('deleting a workshop moves its orders back to personal', async ({ page }) => {
   await seedLoggedIn(page, {
     clients: [{ id: 'client-e2e-1', name: 'Amina Kora', phone: '+229 01 90 12 34 56', address: 'Cotonou' }],
